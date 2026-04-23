@@ -1,0 +1,937 @@
+<!doctype html>
+<!--
+  =====================================================================
+  NOTE TO AGENTS — READ BEFORE EDITING THIS FILE
+  =====================================================================
+  This deck is a single-file, auto-wired UI, forked from prd-template.html
+  for the Sun-Pull product. When adding or generating new slides:
+
+    1. Only add <section class="slide"> blocks inside <main class="deck">.
+       Use the template in the HOW TO ADD A SLIDE comment in prd-template.html.
+
+    2. DO NOT hand-edit <nav id="index-nav"> — it is rebuilt from the
+       slides at page load. Hardcoded entries are thrown away.
+
+    3. DO NOT write slide numbers into .tag or .page by hand. The script
+       stamps "NN · label" into .tag and "NN / TOTAL" into .page on load.
+
+    4. DO NOT change the DOM contract the script depends on:
+         - <main class="deck" id="deck">
+         - <nav id="index-nav">
+         - each slide = <section class="slide"> with .tag, <h1>, .page
+         - optional data-title="..." on the section (overrides h1 in the index)
+
+    5. Content layout on each slide stays minimal for now — tag + h1 +
+       brief + (optional) list. Richer visuals live inside .wireframe-slot
+       placeholders, to be filled in a later pass.
+
+  If a requested change would violate any of the above, surface the
+  conflict instead of silently breaking the UI.
+  =====================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aither · Sun-Pull PRD</title>
+<link rel="stylesheet" href="./tokens.css">
+<style>
+  html, body {
+    background: var(--canvas-bg);
+    color: var(--canvas-fg);
+    min-height: 100%;
+    margin: 0;
+    font-family: var(--font-ui);
+    letter-spacing: -0.01em;
+  }
+  html { scroll-behavior: smooth; }
+
+  /* Window scrolls (not .deck) so comments.js pins stick to body coords. */
+  .app { display: block; }
+
+  /* ---------- Left index (fixed; only the nav list scrolls) ---------- */
+  .index {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    border-right: 1px solid var(--canvas-hair);
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    background: var(--canvas-bg);
+    z-index: 10;
+  }
+
+  .index .deck-title {
+    font-size: 20px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--canvas-fg);
+    margin: 32px 0 0;
+  }
+  .index .deck-sub {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 6px 0 0;
+  }
+
+  .index h2 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--canvas-hair);
+  }
+
+  .index nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .index nav a {
+    display: grid;
+    grid-template-columns: 28px 1fr 12px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--canvas-hair);
+    color: var(--canvas-fg);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+  }
+  .index nav a .n {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--canvas-label);
+    padding-top: 2px;
+  }
+  .index nav a:hover { color: var(--canvas-fg); }
+  .index nav a:hover .n { color: var(--canvas-fg); }
+  .index nav a.is-active .n { color: var(--canvas-fg); }
+  .index nav a.is-active { color: var(--canvas-fg); }
+  .index nav a.is-active::before {
+    content: "";
+    position: absolute;
+    margin-left: -20px;
+    margin-top: 14px;
+    width: 2px;
+    height: 14px;
+    background: var(--canvas-fg);
+  }
+  .index nav a { position: relative; }
+
+  /* ---------- Deck (right) ---------- */
+  .deck {
+    margin-left: 260px;
+    padding: 48px 64px 96px;
+  }
+
+  .slide {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    aspect-ratio: 16 / 9;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    border-radius: var(--r-2);
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    position: relative;
+    scroll-margin-top: 32px;
+  }
+  .slide .tag {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+  .slide h1 {
+    font-size: 48px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    color: var(--canvas-fg);
+    margin: 12px 0 16px;
+    max-width: 20ch;
+  }
+  .slide p {
+    font-size: 16px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.7);
+    max-width: 56ch;
+    margin: 0;
+  }
+  .slide .page {
+    position: absolute;
+    right: 48px;
+    bottom: 32px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+
+  /* ---------- Status dot (open/signed) ---------- */
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    vertical-align: middle;
+    flex: none;
+  }
+  .slide .tag { display: inline-flex; align-items: center; gap: 8px; }
+  .status-dot.is-open {
+    background: transparent;
+    border: 1px solid var(--canvas-label);
+  }
+  .status-dot.is-signed {
+    background: var(--canvas-fg);
+    border: 1px solid var(--canvas-fg);
+  }
+
+  /* ---------- Brief block ---------- */
+  .slide .brief {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(234,228,226,0.58);
+    max-width: 64ch;
+    margin: 0 0 20px;
+    padding: 14px 18px;
+    border-left: 2px solid var(--canvas-hair);
+  }
+  .slide .brief strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+  }
+
+  /* ---------- Content helpers (scoped) ---------- */
+  .bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 70ch;
+  }
+  .bullets li {
+    font-size: 15px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.82);
+    padding-left: 18px;
+    position: relative;
+  }
+  .bullets li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 10px;
+    width: 6px; height: 1px;
+    background: var(--canvas-label);
+  }
+  .bullets li strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+    letter-spacing: -0.005em;
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 32px;
+    margin-top: 4px;
+  }
+  .cols .col h3 {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 0 0 12px;
+    font-weight: 500;
+  }
+  .cols .col .bullets li { font-size: 13px; }
+  .cols.two { grid-template-columns: 1fr 1fr; }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 10px 24px;
+    margin: 0;
+    max-width: 72ch;
+  }
+  .kv dt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(234,228,226,0.5);
+    letter-spacing: 0;
+  }
+  .kv dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(234,228,226,0.85);
+  }
+
+  /* ---------- Wireframe placeholder slot ---------- */
+  .wireframe-slot {
+    margin-top: auto;
+    margin-bottom: 32px;
+    padding: 32px;
+    border: 1px dashed var(--canvas-hair);
+    border-radius: var(--r-2);
+    color: var(--canvas-label);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+  }
+
+  /* scrollbars (subtle) */
+  .index nav::-webkit-scrollbar { width: 8px; }
+  .index nav::-webkit-scrollbar-thumb {
+    background: rgba(234,228,226,0.12);
+    border-radius: 4px;
+  }
+  .index nav::-webkit-scrollbar-thumb:hover { background: rgba(234,228,226,0.25); }
+
+  /* ---------- Back-home link (fixed top-left) ---------- */
+  .home-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(234,228,226,0.75);
+    background: rgba(18,13,11,0.55);
+    border: 1px solid rgba(234,228,226,0.18);
+    border-radius: var(--r-2);
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .home-link:hover {
+    color: rgba(234,228,226,1);
+    border-color: rgba(234,228,226,0.4);
+  }
+
+  @media (max-width: 720px) {
+    .index {
+      position: static;
+      width: auto;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--canvas-hair);
+    }
+    .deck { margin-left: 0; padding: 24px 20px 64px; }
+    .slide { padding: 28px; }
+    .slide h1 { font-size: 32px; }
+    .cols, .cols.two { grid-template-columns: 1fr; gap: 20px; }
+    .kv { grid-template-columns: 1fr; gap: 4px 0; }
+    .kv dd { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" title="Back to home" aria-label="Back to home">&larr; Home</a>
+
+<div class="app">
+
+  <aside class="index">
+    <div>
+      <h1 class="deck-title">Sun-Pull</h1>
+      <p class="deck-sub">Memory layer · PRD v0.1 · 2026-04-22</p>
+    </div>
+    <h2>Index</h2>
+    <nav id="index-nav"><!-- auto-populated from .slide sections --></nav>
+  </aside>
+
+  <main class="deck" id="deck">
+
+    <!-- ===== Framing ===== -->
+
+    <section class="slide" data-title="Cover" data-status="open">
+      <span class="tag">Cover</span>
+      <h1>Sun-Pull.</h1>
+      <p>Your saves, owned and searchable. The memory layer for the Sun suite.</p>
+      <dl class="kv" style="margin-top:32px;">
+        <dt>Version</dt><dd>v0.1 — first draft</dd>
+        <dt>Date</dt><dd>2026-04-22</dd>
+        <dt>Product owner</dt><dd>Jasmine Eskandari</dd>
+        <dt>Design lead</dt><dd>Wayeez Giash</dd>
+        <dt>Status</dt><dd>Section-by-section review</dd>
+      </dl>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="What Sun-Pull is" data-status="open">
+      <span class="tag">Definition</span>
+      <h1>What this is.</h1>
+      <p class="brief">One home for everything a taste-maker saves across Pinterest, Arena, Cosmos, Instagram, LinkedIn, Substack, and the open web — searchable, cluster-able, and owned by the user.</p>
+      <ul class="bullets">
+        <li><strong>Memory layer</strong> — every save becomes context the rest of the Sun suite can act on.</li>
+        <li><strong>Taste artifact</strong> — a living record of what the user finds good, not what an algorithm pushes.</li>
+        <li><strong>Search-first</strong> — conversational queries across everything saved, across every source.</li>
+        <li><strong>Owned</strong> — the user exports, deletes, or hands their taste to another app they trust.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Problem" data-status="open">
+      <span class="tag">Problem</span>
+      <h1>Why this exists.</h1>
+      <p class="brief">Taste-makers are saving constantly — and losing it constantly. Current tools hold fragments of a person's taste; no tool holds the whole.</p>
+      <ul class="bullets">
+        <li><strong>Scatter.</strong> Saves live across Pinterest, Instagram DMs, LinkedIn, Chrome bookmarks, Substack, iMessage. None of it is one library.</li>
+        <li><strong>Stale AI.</strong> Claude pitches 2023-era references because it has no visibility into what the user is actually saving now.</li>
+        <li><strong>Lost ownership.</strong> Instagram, TikTok, LinkedIn own the signal. The user doesn't get paid for their taste; the platforms do.</li>
+        <li><strong>No memory.</strong> Every new design brief starts from zero. References are re-found, not recalled.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Vision / North Star" data-status="open">
+      <span class="tag">Vision</span>
+      <h1>Where we're going.</h1>
+      <p class="brief">Sun-Pull becomes the memory layer for taste on the internet. The cool-kids-club of curators — earned by saving, not bought.</p>
+      <ul class="bullets">
+        <li><strong>Own your data.</strong> Every save is portable, exportable, deletable. The user, not the platform, holds the library.</li>
+        <li><strong>Curation is currency.</strong> The more rare and specific your saves, the more rare and specific the pool you have access to.</li>
+        <li><strong>Collaborative filtering.</strong> Users with adjacent taste auto-share into each other's libraries — optionally — so the pool grows ambiently.</li>
+        <li><strong>Sign in with Sun-Pull.</strong> Any app can ask for your taste at sign-in; homepages land pre-curated. Users and Sun-Pull share the revenue.</li>
+        <li><strong>From B2B to consumer.</strong> Start with taste-making designers; extend to travel, food, music, film — anywhere taste lives.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="The Sun ecosystem" data-status="open">
+      <span class="tag">Ecosystem</span>
+      <h1>Where this sits.</h1>
+      <p class="brief">Sun-Pull is the memory; Sun-Run is the action; Sun-Dial is the calendar; Sun-Chat is the interface. Sun-Pull is the substrate — built and shipped first because the others depend on it.</p>
+      <dl class="kv">
+        <dt>Sun-Pull</dt><dd>Memory layer. Every save from every source. <em>This PRD.</em></dd>
+        <dt>Sun-Run</dt><dd>Actionable layer. "Find all brand prospects → extract → write message → push to Salesforce." Pulls from Sun-Pull.</dd>
+        <dt>Sun-Dial</dt><dd>Project-management layer. Roadmaps, deadlines, what a Run is due by.</dd>
+        <dt>Sun-Chat</dt><dd>Conversational surface across all three. Grounded in Sun-Pull's memory.</dd>
+      </dl>
+      <div class="wireframe-slot">Wireframe → Sun-Pull at the center, Run / Dial / Chat orbiting.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Phases" data-status="open">
+      <span class="tag">Phases</span>
+      <h1>Now, next, later.</h1>
+      <p class="brief">Phase 1 is the internal tool we use every day. Phase 2 opens it to other high-agency taste-makers. Phase 3 expands the vertical beyond design.</p>
+      <div class="cols">
+        <div class="col">
+          <h3>Now · Phase 1</h3>
+          <ul class="bullets">
+            <li>Internal use — Jazz, Wayeez, Michael.</li>
+            <li>Bulk import existing saves.</li>
+            <li>Library, search, clusters, archetype.</li>
+            <li>Isolated from Sun-Run.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>Next · Phase 2</h3>
+          <ul class="bullets">
+            <li>Invite-only beta for taste-maker designers.</li>
+            <li>Hook into Sun-Run for missions.</li>
+            <li>First collaborative-filtering pool.</li>
+            <li>Third-party "Sign in with Sun-Pull."</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>Later · Phase 3</h3>
+          <ul class="bullets">
+            <li>Consumer verticals — travel, food, film.</li>
+            <li>Revenue share on shared taste data.</li>
+            <li>Public API.</li>
+            <li>Archetype-based matchmaking.</li>
+          </ul>
+        </div>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Foundations ===== -->
+
+    <section class="slide" data-title="Persona · phase 1" data-status="open">
+      <span class="tag">Personas</span>
+      <h1>Who we're designing for.</h1>
+      <p class="brief">Phase 1 is narrow by design. The flows only need to serve one persona well before we widen the aperture.</p>
+      <dl class="kv">
+        <dt>Archetype</dt><dd>High-agency taste-maker. Designer, founder, or strategist whose job depends on being early.</dd>
+        <dt>Behaviour</dt><dd>Saves constantly — Pinterest, Instagram DMs, LinkedIn, bookmarks, Substack. Already has years of back-catalogue scattered.</dd>
+        <dt>Jobs to be done</dt><dd>(1) Stop losing saves. (2) Find old saves by vibe, not by filename. (3) Give AI tools the right references on the first try.</dd>
+        <dt>What they already buy</dt><dd>Notion, Are.na, Mymind, Raindrop, Readwise, Pinterest Premium.</dd>
+        <dt>Success signal</dt><dd>They stop saving anywhere else. Sun-Pull becomes the default verb: "I'll pull that."</dd>
+      </dl>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Mental model" data-status="open">
+      <span class="tag">Mental model</span>
+      <h1>What this feels like.</h1>
+      <p class="brief">Pinterest masonry for the grid; a lightweight OS for the chrome around it. Dense, visual, owned. Not a database. Not a feed.</p>
+      <ul class="bullets">
+        <li><strong>Pinterest, for the grid.</strong> Masonry, image-first, scan-able at speed.</li>
+        <li><strong>OS, for the shell.</strong> Windows, cluster chips, a searchable command layer — a desktop, not a webpage.</li>
+        <li><strong>Private, by default.</strong> The library is the user's. Sharing is explicit, per-cluster.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → masonry grid with cluster chips and an OS-style top chrome.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Core concepts" data-status="open">
+      <span class="tag">Vocabulary</span>
+      <h1>The words we use.</h1>
+      <p class="brief">A small, tight vocabulary. Every surface uses these words consistently.</p>
+      <dl class="kv">
+        <dt>Save</dt><dd>A single item — image, link, post, file — added to the library from any source.</dd>
+        <dt>Source</dt><dd>The origin of a save (Pinterest, Instagram, LinkedIn, upload, text-to-pull, Cmd+S).</dd>
+        <dt>Cluster</dt><dd>An auto- or manually-grouped set of saves sharing intent ("consumer launches", "brand prospects").</dd>
+        <dt>Library</dt><dd>The user's full set of saves — home surface.</dd>
+        <dt>Archetype</dt><dd>A read on the user's taste pattern, surfaced after onboarding.</dd>
+        <dt>Pull</dt><dd>Verb. To save something to Sun-Pull. "I'll pull that."</dd>
+      </dl>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design principles" data-status="open">
+      <span class="tag">Principles</span>
+      <h1>Rules we design against.</h1>
+      <p class="brief">Every decision traces back to one of these. If we can't trace it, we're drifting.</p>
+      <ul class="bullets">
+        <li><strong>Friction-less save.</strong> If saving takes a second thought, we've already lost.</li>
+        <li><strong>Text is enough.</strong> On phone, an SMS is a valid interface. No app required.</li>
+        <li><strong>Visual by default.</strong> Every save gets an image the user can scan past.</li>
+        <li><strong>The library is the user's.</strong> Export, delete, disconnect — all one click.</li>
+        <li><strong>Silence over nudge.</strong> We don't chase engagement. No streaks. No shame.</li>
+        <li><strong>Clusters emerge.</strong> The user doesn't tag — the system proposes and they confirm.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Journey & flows ===== -->
+
+    <section class="slide" data-title="User journey" data-status="open">
+      <span class="tag">Journey</span>
+      <h1>The arc.</h1>
+      <p class="brief">Five moments from first contact to steady state. Each should feel inevitable — not sold to.</p>
+      <ol class="bullets" style="counter-reset:j;">
+        <li><strong>Discover.</strong> A designer hears Sun-Pull is where their peer group holds their saves.</li>
+        <li><strong>Onboard.</strong> Connect accounts + import bookmarks. One loading screen, one archetype reveal.</li>
+        <li><strong>Land.</strong> Library is already populated. First search works on day one.</li>
+        <li><strong>Habit.</strong> Text-to-pull and Cmd+S replace every other save action within two weeks.</li>
+        <li><strong>Retention.</strong> A weekly "your taste this week" card; archetype drift tracked over time.</li>
+      </ol>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Auth &amp; accounts" data-status="open">
+      <span class="tag">Auth</span>
+      <h1>Sign in, connect, disconnect.</h1>
+      <p class="brief">Phase 1 is internal — invite-only email sign-in. But the model we set now has to support the "Sign in with Sun-Pull" endgame.</p>
+      <ul class="bullets">
+        <li><strong>Sign in.</strong> Email magic-link for phase 1. OAuth (Google, Apple) for phase 2.</li>
+        <li><strong>Connect sources.</strong> Per-source OAuth where available (Pinterest, LinkedIn via extension). Explicit scope list shown at each connect.</li>
+        <li><strong>Disconnect.</strong> One click per source. Disconnect preserves saves already pulled; revokes future ingestion.</li>
+        <li><strong>Failure states.</strong> Expired token → re-auth prompt in the source's row, not a modal. Rate-limit → deferred re-sync, no user error shown.</li>
+        <li><strong>Future:</strong> "Sign in with Sun-Pull" — third-party apps request a scoped taste read; user approves per-request.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="First-time user flow" data-status="open">
+      <span class="tag">Flow</span>
+      <h1>First visit.</h1>
+      <p class="brief">Four beats — input, load, archetype reveal, land on library. Every beat has a single decision. Drop-off risk is the load screen if import stalls.</p>
+      <ol class="bullets">
+        <li><strong>1 · Input.</strong> Connect two sources (min), or drop a links.txt / bookmarks.html. Skip allowed — empty library is a valid state.</li>
+        <li><strong>2 · Loading.</strong> Live counter of items pulled. Estimated completion. Option to continue in background.</li>
+        <li><strong>3 · Archetype.</strong> A single card — "You're a ___ saver." Two-sentence explanation. Shareable.</li>
+        <li><strong>4 · Library.</strong> Land on the populated grid with a brief coach-mark on search, cluster chips, and the pull verb.</li>
+      </ol>
+      <div class="wireframe-slot">Wireframe → 4-step strip, mobile + desktop.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Second-time user flow" data-status="open">
+      <span class="tag">Flow</span>
+      <h1>Return visit.</h1>
+      <p class="brief">The return visit is the library — no welcome screen, no streak. A "since last visit" row is the only acknowledgment of return.</p>
+      <ul class="bullets">
+        <li>Land directly on Library, scrolled to top.</li>
+        <li>A single "Since you were here" row shows new auto-pulls and new cluster proposals.</li>
+        <li>Cluster proposals are dismissible inline — no modal.</li>
+        <li>No onboarding re-prompts; source errors live in Settings, not the home surface.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → library with a "since last visit" strip at the top.</div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Primary surfaces ===== -->
+
+    <section class="slide" data-title="Library (headline artifact)" data-status="open">
+      <span class="tag">Artifact</span>
+      <h1>The library.</h1>
+      <p class="brief">The single headline surface. Pinterest-dense masonry, OS-style chrome, a command bar that is also the search. Everything else is accessed from here.</p>
+      <ul class="bullets">
+        <li><strong>Command bar.</strong> Top of screen. Conversational search doubles as a jump-to for clusters and settings.</li>
+        <li><strong>Cluster chips.</strong> Horizontal row of auto-proposed and user-confirmed clusters. Click to scope the grid.</li>
+        <li><strong>Masonry grid.</strong> Image-first cards. Hover reveals source logo + date. Click opens the detail panel.</li>
+        <li><strong>Source rail.</strong> Thin left rail showing connected sources and their sync state.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → command bar · cluster chips · masonry · source rail.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Save detail" data-status="open">
+      <span class="tag">Surface</span>
+      <h1>A save, up close.</h1>
+      <p class="brief">A right-side panel, not a modal. Shows the save's metadata and every Run or project it's powering. The link back to Sun-Run lives here — the only place the two products touch in phase 1.</p>
+      <ul class="bullets">
+        <li><strong>Metadata.</strong> Source, captured-at, original URL, any note the user added.</li>
+        <li><strong>Clusters.</strong> Every cluster the save belongs to, inline-removable.</li>
+        <li><strong>Used by.</strong> Runs and projects sourcing this save (phase 2 link; phase 1 shows placeholders).</li>
+        <li><strong>Actions.</strong> Note, delete, share to a cluster, export.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → right panel with image, metadata, clusters, "used by" list.</div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Core cases ===== -->
+
+    <section class="slide" data-title="Case · Search &amp; filters" data-status="open">
+      <span class="tag">Case</span>
+      <h1>Conversational search.</h1>
+      <p class="brief">The user types in sentences, not keywords. Filters are chips that appear as the query resolves — never a separate panel.</p>
+      <ul class="bullets">
+        <li><strong>Query.</strong> "Consumer launches I saved last year." Resolves across every source.</li>
+        <li><strong>Facets as chips.</strong> Source, date range, cluster — all appear under the query, editable inline.</li>
+        <li><strong>Results.</strong> Masonry with a "result-count" chip; empty state proposes related queries.</li>
+        <li><strong>Save the search.</strong> A saved search becomes a virtual cluster.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → search bar with resolved chips + results grid.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Case · Clusters" data-status="open">
+      <span class="tag">Case</span>
+      <h1>Clusters emerge.</h1>
+      <p class="brief">The user never tags. The system proposes clusters from behaviour and asks one yes/no. A cluster can also be a saved search.</p>
+      <ul class="bullets">
+        <li><strong>Auto-propose.</strong> When a cohort of saves share visual/semantic signal, Sun-Pull proposes a cluster name and the user confirms, renames, or dismisses.</li>
+        <li><strong>Manual.</strong> Select saves → "new cluster" → name. No mandatory description.</li>
+        <li><strong>Nesting.</strong> Flat in phase 1. Nested clusters deferred to v2.</li>
+        <li><strong>Shared clusters.</strong> Phase 2+. Share a cluster with another Sun-Pull user — read-only or contribute.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → cluster chip row + a proposal card ("new cluster suggested").</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Case · Bulk import existing" data-status="open">
+      <span class="tag">Case</span>
+      <h1>Bringing the back-catalogue.</h1>
+      <p class="brief">Everyone onboarding has ten years of saves. The import flow has to feel like a one-time gift, not homework.</p>
+      <ul class="bullets">
+        <li><strong>Pinterest / Arena / Cosmos.</strong> Direct API. Shows boards + saves; user picks all or specific boards.</li>
+        <li><strong>LinkedIn.</strong> Chrome extension (LinkedIn has no save-API). Extension walks the user through "open your saves, we'll pull."</li>
+        <li><strong>Chrome bookmarks.</strong> Drop a bookmarks.html file. Parsed server-side.</li>
+        <li><strong>Files &amp; links.</strong> Drag a folder or paste a links.txt. Each becomes a save.</li>
+        <li><strong>Failure states.</strong> Partial import → retries surface as banner, not blocker. User can keep browsing while sync continues.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → source picker + per-source connect state + drag-drop zone.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Case · Add from phone" data-status="open">
+      <span class="tag">Case</span>
+      <h1>Text to pull.</h1>
+      <p class="brief">Saving on phone is a text message. No app open. The only interface is a thread with Sun-Pull.</p>
+      <ul class="bullets">
+        <li><strong>Send.</strong> User texts a link + optional context to Sun-Pull.</li>
+        <li><strong>Confirm.</strong> Sun-Pull replies with the preview and the auto-proposed cluster — reply "yes" to confirm, or type a different cluster.</li>
+        <li><strong>Run hook (phase 2).</strong> If the save matches an active Run, Sun-Pull asks: "Add this to the brand-prospects Run?"</li>
+        <li><strong>Failure states.</strong> Dead link → Sun-Pull asks for a screenshot. Private content → refuses and explains why.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → SMS conversation, three bubbles.</div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Case · Add from desktop" data-status="open">
+      <span class="tag">Case</span>
+      <h1>Cmd+S, anywhere.</h1>
+      <p class="brief">A browser extension binds Cmd+S to a micro-popover — no tab-switch, no modal, no focus steal. Confirm or type a one-line context, and it's gone.</p>
+      <ul class="bullets">
+        <li><strong>Trigger.</strong> Cmd+S on any page (optional keybind).</li>
+        <li><strong>Popover.</strong> 320px overlay with the page preview, a cluster auto-suggestion, and a one-line context input.</li>
+        <li><strong>Dismiss.</strong> Enter commits and closes; Esc cancels. Closes itself on commit — no toast, no confirmation modal.</li>
+        <li><strong>Failure states.</strong> Auth-expired → extension shows a single-line "reconnect" CTA; save is queued until reconnect.</li>
+      </ul>
+      <div class="wireframe-slot">Wireframe → browser page with Cmd+S micro-popover overlay.</div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Cross-cutting ===== -->
+
+    <section class="slide" data-title="Integrations (future)" data-status="open">
+      <span class="tag">Integrations</span>
+      <h1>What Sun-Pull feeds.</h1>
+      <p class="brief">In phase 1 Sun-Pull stands alone. The slide exists so we design with these hooks in mind, not so we ship them.</p>
+      <dl class="kv">
+        <dt>Sun-Run</dt><dd>Runs read clusters as inputs. A save added with context can attach itself to an open Run.</dd>
+        <dt>Sun-Dial</dt><dd>Runs carry deadlines from Sun-Dial. Sun-Pull only needs to expose stable save IDs.</dd>
+        <dt>Sun-Chat</dt><dd>Every chat turn can pull from the library; every chat answer cites the save it leaned on.</dd>
+        <dt>Third-party</dt><dd>"Sign in with Sun-Pull" — scoped taste reads for any app the user trusts.</dd>
+      </dl>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Data &amp; ownership" data-status="open">
+      <span class="tag">Settings</span>
+      <h1>Trust, data, control.</h1>
+      <p class="brief">The product's credibility lives here. If any of these are hard to find, the "you own your data" claim collapses.</p>
+      <ul class="bullets">
+        <li><strong>Export.</strong> Full-library export as JSON + media zip. One click, no email.</li>
+        <li><strong>Delete.</strong> Per-save, per-cluster, per-source, or full account — each reversible for 30 days.</li>
+        <li><strong>Disconnect.</strong> Per-source OAuth revoke; existing saves stay.</li>
+        <li><strong>Visibility.</strong> Private by default. Sharing is per-cluster and explicit.</li>
+        <li><strong>Revenue share (phase 3).</strong> Opt-in. Dashboard shows what was shared, with whom, and the cut.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Edge &amp; empty states" data-status="open">
+      <span class="tag">Edges</span>
+      <h1>Quiet failures.</h1>
+      <p class="brief">Never shame the user for an empty library or a broken sync. The tone stays dignified — descriptive, not apologetic.</p>
+      <ul class="bullets">
+        <li><strong>Empty library.</strong> "Nothing pulled yet. Connect a source or text a link to get started."</li>
+        <li><strong>Source disconnected.</strong> Inline row: "Pinterest disconnected on Apr 18. Reconnect."</li>
+        <li><strong>Import stalled.</strong> Banner with live count, not a modal. Continue-in-background is always available.</li>
+        <li><strong>Dead save.</strong> Original URL 404s → cached preview stays, with a small "original removed" tag.</li>
+        <li><strong>Cluster proposal rejected.</strong> Dismissing a proposal never asks "are you sure"; the proposal just disappears.</li>
+        <li><strong>Private content.</strong> If a save can't be captured (private Instagram), Sun-Pull refuses and shows the reason.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <!-- ===== Close ===== -->
+
+    <section class="slide" data-title="Out of scope for v1" data-status="open">
+      <span class="tag">Scope</span>
+      <h1>What we're not designing.</h1>
+      <p class="brief">Explicit deferrals protect the ship date. Each item lists the phase it's expected to land.</p>
+      <ul class="bullets">
+        <li><strong>Sun-Run hooks</strong> — phase 2. Designed-for, not wired-up.</li>
+        <li><strong>Collaborative filtering pools</strong> — phase 2.</li>
+        <li><strong>"Sign in with Sun-Pull"</strong> — phase 2+.</li>
+        <li><strong>Nested clusters</strong> — phase 2.</li>
+        <li><strong>Consumer verticals (travel, food, film)</strong> — phase 3.</li>
+        <li><strong>Revenue-share dashboard</strong> — phase 3.</li>
+        <li><strong>Public API</strong> — phase 3.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Open questions" data-status="open">
+      <span class="tag">Questions</span>
+      <h1>What to bring back.</h1>
+      <p class="brief">Decisions design should lead on. Each question paired with what a "good answer" looks like.</p>
+      <ul class="bullets">
+        <li><strong>Archetype taxonomy.</strong> How many archetypes? What are they named? — <em>Good answer:</em> a fixed set of 8–12 with distinct visuals.</li>
+        <li><strong>Cluster proposal cadence.</strong> When does the system propose? Every N saves, or daily? — <em>Good answer:</em> a clear trigger that doesn't feel nagging.</li>
+        <li><strong>Source prioritisation.</strong> Which sources ship in phase 1 import? — <em>Good answer:</em> the top three by user's save-volume.</li>
+        <li><strong>Dedupe.</strong> If the same URL is saved twice across sources, is it one save or two? — <em>Good answer:</em> one, with both source tags.</li>
+        <li><strong>Archetype drift.</strong> Does the archetype update over time, or is it a moment? — <em>Good answer:</em> a moment now, drift tracked in phase 2.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Success metrics" data-status="open">
+      <span class="tag">Metrics</span>
+      <h1>How we'll know it worked.</h1>
+      <p class="brief">Phase 1 is internal — metrics are behavioural, not volume. Good numbers look like habit formation, not virality.</p>
+      <ul class="bullets">
+        <li><strong>Daily pull rate.</strong> Saves per active user per day. Good: &gt;3 within week two.</li>
+        <li><strong>Source concentration.</strong> % of a user's saves that land in Sun-Pull vs. elsewhere. Good: &gt;70% by week four.</li>
+        <li><strong>Search success.</strong> % of searches that end in a click. Good: &gt;60%.</li>
+        <li><strong>Cluster acceptance.</strong> % of auto-proposed clusters confirmed, not dismissed. Good: &gt;40%.</li>
+        <li><strong>Onboarding completion.</strong> % who reach the library from cover. Good: &gt;80%.</li>
+        <li><strong>Not optimizing for:</strong> DAU, session length, notification open-rate.</li>
+      </ul>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Mood &amp; references" data-status="open">
+      <span class="tag">Mood</span>
+      <h1>Tone and references.</h1>
+      <p class="brief">What Sun-Pull feels like. What it doesn't.</p>
+      <div class="cols two">
+        <div class="col">
+          <h3>Feels like</h3>
+          <ul class="bullets">
+            <li>Are.na's calm. Pinterest's density.</li>
+            <li>Mymind's private-by-default posture.</li>
+            <li>A dealer's notebook — specific, earned.</li>
+            <li>An OS over a webpage.</li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>Not</h3>
+          <ul class="bullets">
+            <li>Not a feed. No infinite scroll.</li>
+            <li>No streaks, no badges, no shame.</li>
+            <li>No AI-generated content in the grid.</li>
+            <li>No social graph surfaced by default.</li>
+          </ul>
+        </div>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Close" data-status="open">
+      <span class="tag">Close</span>
+      <h1>Next steps.</h1>
+      <p class="brief">Section-by-section review. Jazz signs off per slide via the status dot — open (hollow) or signed (filled). Once every slide is signed, wireframes follow.</p>
+      <dl class="kv">
+        <dt>Owner</dt><dd>Jasmine Eskandari</dd>
+        <dt>Design lead</dt><dd>Wayeez Giash</dd>
+        <dt>Review</dt><dd>Async via Slack thread; each signed slide flipped here (data-status="signed").</dd>
+        <dt>After sign-off</dt><dd>Wireframe pass on the 10 slots marked above, then a technical PRD spin for Michael.</dd>
+      </dl>
+      <span class="page"></span>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  /*
+    Slides runtime — do not hand-edit the index or page numbers.
+    Adding a new <section class="slide"> is sufficient; the script
+    handles ids, numbering, index, and the active-state highlight.
+  */
+  (function () {
+    var deck   = document.getElementById('deck');
+    var nav    = document.getElementById('index-nav');
+    var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+    var total  = slides.length;
+    var pad    = function (n) { return (n < 10 ? '0' : '') + n; };
+
+    var isSigned = function (slide) {
+      return (slide.getAttribute('data-status') || '').toLowerCase() === 'signed';
+    };
+
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      if (!slide.id) slide.id = 's' + num;
+
+      var tag = slide.querySelector('.tag');
+      if (tag) {
+        var raw = (tag.textContent || '').trim();
+        var label = raw.replace(/^\s*\d+\s*[·\-–—]\s*/, '');
+        tag.innerHTML = '';
+        if (isSigned(slide)) {
+          var dot = document.createElement('span');
+          dot.className = 'status-dot is-signed';
+          tag.appendChild(dot);
+        }
+        var text = document.createElement('span');
+        text.textContent = pad(num) + ' · ' + label;
+        tag.appendChild(text);
+      }
+
+      var page = slide.querySelector('.page');
+      if (page) page.textContent = pad(num) + ' / ' + pad(total);
+    });
+
+    nav.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      var titleAttr = slide.getAttribute('data-title');
+      var h1 = slide.querySelector('h1');
+      var label = (titleAttr && titleAttr.trim())
+        || (h1 ? h1.textContent.trim().replace(/[\.!?]+$/, '') : 'Slide ' + num);
+
+      var a = document.createElement('a');
+      a.href = '#' + slide.id;
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = pad(num);
+      var labelEl = document.createElement('span');
+      labelEl.className = 'label';
+      labelEl.textContent = label;
+      a.appendChild(n);
+      a.appendChild(labelEl);
+      if (isSigned(slide)) {
+        var dot = document.createElement('span');
+        dot.className = 'status-dot is-signed';
+        a.appendChild(dot);
+      } else {
+        a.appendChild(document.createElement('span'));
+      }
+      nav.appendChild(a);
+    });
+
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var byId  = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('is-active'); });
+        var a = byId[e.target.id];
+        if (a) a.classList.add('is-active');
+      });
+    }, { root: null, rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+    slides.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+<script src="./firebase-config.js"></script>
+<script src="./comments.js" defer></script>
+</body>
+</html>

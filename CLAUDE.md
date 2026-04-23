@@ -18,9 +18,9 @@ Canonical artifact: [wireframe-library.html](wireframe-library.html) — it inli
 - **Keep the IntroCard accurate.** If a change alters the taxonomy, canonical file, or growth rules, update the card (`IntroCard` and `DsIntro` in [wireframe-library.html](wireframe-library.html); mirrored in [app.jsx](app.jsx) and [app.combined.jsx](app.combined.jsx)).
 - **Flows always include auth and error states.** Any flow added to the Flows zone must show its auth path(s) and error/failure states, not just the happy path. If these are missing from a source template, surface the gap rather than shipping the flow without them.
 
-## Slides deck — [slides.html](slides.html)
+## Deck template — [prd-template.html](prd-template.html)
 
-Separate artifact from the canvas. Single-file, auto-wired deck. When generating or adding slides:
+Separate artifact from the canvas. Single-file, auto-wired deck — this file is the foundation for PRD clones. Do not edit its infrastructure (DOM contract, index sidebar, scroll-spy, back-home button, base `.slide`/`.deck` CSS); clone it and add content inside the clone. When generating or adding slides:
 
 - **Only add `<section class="slide">` blocks** inside `<main class="deck">`. Use the canonical template in the `HOW TO ADD A SLIDE` comment inside the file.
 - **Do not hand-edit `<nav id="index-nav">`.** It is rebuilt on load from the slide sections — hardcoded entries are discarded.

@@ -476,6 +476,11 @@
   // ---------- Boot ----------
   const waitForContainer = () => new Promise(resolve => {
     if (isDeck || getCanvasSurface()) return resolve();
+    // .canvas-surface is only created at runtime by the React app mounted
+    // into #root (wireframe-library). Pages without that root — e.g.
+    // prd-template, which pins to document.body — should boot immediately
+    // instead of waiting out the safety timeout.
+    if (!document.getElementById('root')) return resolve();
     const mo = new MutationObserver(() => {
       if (getCanvasSurface()) { mo.disconnect(); resolve(); }
     });
