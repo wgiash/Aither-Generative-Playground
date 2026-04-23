@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aither · Wireframe Library · Test Batch</title>
 
+<script src="./firebase-config.js"></script>
+<script src="./auth-gate.js"></script>
+
 <style>
 /* ========== tokens.css ========== */
 /* =========================================================
@@ -13503,7 +13506,6 @@ function Section({ x, y, w, h, num, name, tag, children }) {
   return (
     <div className="wf-section" style={{ left: x, top: y, width: w, height: h }}>
       <div className="wf-section-header">
-        {num && <span className="num">{num}</span>}
         <span className="name">{name}</span>
         {tag && <span className="tag">{tag}</span>}
       </div>

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aither · Home</title>
 <link rel="stylesheet" href="./tokens.css">
+<script src="./firebase-config.js"></script>
+<script src="./auth-gate.js"></script>
 <style>
   /* Apercu Pro — display use on the home page only (per DS: "No Apercu in wireframes") */
   @font-face {
@@ -188,6 +190,77 @@
     text-transform: uppercase;
   }
 
+  /* ---------- Profile avatar + dropdown ---------- */
+  .profile {
+    position: relative;
+  }
+  .profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    display: grid;
+    place-items: center;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: var(--w-ui);
+    color: var(--canvas-fg);
+    text-transform: none;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease);
+    flex-shrink: 0;
+  }
+  .profile-avatar:hover {
+    border-color: var(--canvas-label);
+  }
+  .profile-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 160px;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    border-radius: var(--r-2);
+    padding: 6px 0;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .profile-dropdown.open {
+    display: block;
+  }
+  .profile-dropdown .profile-email {
+    padding: 10px 16px 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--canvas-label);
+    border-bottom: 1px solid var(--canvas-hair);
+    margin-bottom: 6px;
+    word-break: break-all;
+    text-transform: none;
+  }
+  .profile-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: 0;
+    text-align: left;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--canvas-fg);
+    letter-spacing: -0.01em;
+    text-transform: none;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease);
+  }
+  .profile-dropdown button:hover {
+    background: rgba(234,228,226,0.06);
+  }
+
   @media (max-width: 640px) {
     .desktop {
       padding: 32px 24px;
@@ -218,6 +291,13 @@
         </svg>
         <input id="search" type="search" placeholder="Search" aria-label="Search" autocomplete="off">
       </label>
+      <div class="profile">
+        <div class="profile-avatar" id="profileBtn" role="button" tabindex="0" aria-label="Profile menu">·</div>
+        <div class="profile-dropdown" id="profileDropdown">
+          <div class="profile-email" id="profileEmail"></div>
+          <button id="logoutBtn" type="button">Log out</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -245,6 +325,7 @@
 <script>
   (function(){
     var el = document.getElementById('clock');
+    if (!el) return;
     function tick(){
       var d = new Date();
       var h = d.getHours();
@@ -284,6 +365,47 @@
         input.value = '';
         apply();
       }
+    });
+  })();
+
+  (function(){
+    var btn = document.getElementById('profileBtn');
+    var dropdown = document.getElementById('profileDropdown');
+    var emailEl = document.getElementById('profileEmail');
+    var logoutBtn = document.getElementById('logoutBtn');
+
+    function initials(user) {
+      var name = (user.displayName || '').trim();
+      if (name) {
+        var parts = name.split(/\s+/);
+        var first = parts[0] ? parts[0][0] : '';
+        var last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+        return (first + last).toUpperCase() || name[0].toUpperCase();
+      }
+      return (user.email || '?')[0].toUpperCase();
+    }
+
+    if (window.aitherOnReady) {
+      window.aitherOnReady(function (user) {
+        btn.textContent = initials(user);
+        btn.setAttribute('aria-label', 'Profile menu — ' + user.email);
+        emailEl.textContent = user.email;
+      });
+    }
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function(){
+      dropdown.classList.remove('open');
+    });
+
+    logoutBtn.addEventListener('click', function(){
+      dropdown.classList.remove('open');
+      if (window.aitherLogout) { window.aitherLogout(); return; }
+      window.location.href = './login.html';
     });
   })();
 </script>

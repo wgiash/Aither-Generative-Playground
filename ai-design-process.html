@@ -1,0 +1,565 @@
+<!doctype html>
+<!--
+  Clone of prd-template.html — single slide showing the AI design pipeline.
+  Infrastructure (index sidebar, scroll-spy, slide base CSS, numbering script)
+  is preserved verbatim. Slide content uses a scoped .process-slide class
+  so no base .slide / .deck CSS is modified.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aither · AI Design Process</title>
+<link rel="stylesheet" href="./tokens.css">
+<script src="./firebase-config.js"></script>
+<script src="./auth-gate.js"></script>
+<style>
+  html, body {
+    background: var(--canvas-bg);
+    color: var(--canvas-fg);
+    min-height: 100%;
+    margin: 0;
+    font-family: var(--font-ui);
+    letter-spacing: -0.01em;
+  }
+  html { scroll-behavior: smooth; }
+
+  .app { display: block; }
+
+  /* ---------- Left index (fixed; only the nav list scrolls) ---------- */
+  .index {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    border-right: 1px solid var(--canvas-hair);
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    background: var(--canvas-bg);
+    z-index: 10;
+  }
+
+  .index .deck-title {
+    font-size: 20px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--canvas-fg);
+    margin: 32px 0 0;
+  }
+  .index .deck-sub {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 6px 0 0;
+  }
+
+  .index h2 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--canvas-hair);
+  }
+
+  .index nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .index nav a {
+    display: grid;
+    grid-template-columns: 28px 1fr 12px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--canvas-hair);
+    color: var(--canvas-fg);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+  }
+  .index nav a .n {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--canvas-label);
+    padding-top: 2px;
+  }
+  .index nav a:hover { color: var(--canvas-fg); }
+  .index nav a:hover .n { color: var(--canvas-fg); }
+  .index nav a.is-active .n { color: var(--canvas-fg); }
+  .index nav a.is-active { color: var(--canvas-fg); }
+  .index nav a.is-active::before {
+    content: "";
+    position: absolute;
+    margin-left: -20px;
+    margin-top: 14px;
+    width: 2px;
+    height: 14px;
+    background: var(--canvas-fg);
+  }
+  .index nav a { position: relative; }
+
+  /* ---------- Deck (right) ---------- */
+  .deck {
+    margin-left: 260px;
+    padding: 48px 64px 96px;
+  }
+
+  .slide {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    aspect-ratio: 16 / 9;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    border-radius: var(--r-2);
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    position: relative;
+    scroll-margin-top: 32px;
+  }
+  .slide .tag {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+  .slide h1 {
+    font-size: 48px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    color: var(--canvas-fg);
+    margin: 12px 0 16px;
+    max-width: 20ch;
+  }
+  .slide p {
+    font-size: 16px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.7);
+    max-width: 56ch;
+    margin: 0;
+  }
+  .slide .page {
+    position: absolute;
+    right: 48px;
+    bottom: 32px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+
+  /* ---------- Status dot ---------- */
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    vertical-align: middle;
+    flex: none;
+  }
+  .slide .tag { display: inline-flex; align-items: center; gap: 8px; }
+  .status-dot.is-open {
+    background: transparent;
+    border: 1px solid var(--canvas-label);
+  }
+  .status-dot.is-signed {
+    background: var(--canvas-fg);
+    border: 1px solid var(--canvas-fg);
+  }
+
+  .slide .brief {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(234,228,226,0.58);
+    max-width: 64ch;
+    margin: 0 0 24px;
+    padding: 14px 18px;
+    border-left: 2px solid var(--canvas-hair);
+  }
+  .slide .brief strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+  }
+
+  .wireframe-slot {
+    margin-top: auto;
+    margin-bottom: 32px;
+    padding: 32px;
+    border: 1px dashed var(--canvas-hair);
+    border-radius: var(--r-2);
+    color: var(--canvas-label);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+  }
+
+  .index nav::-webkit-scrollbar { width: 8px; }
+  .index nav::-webkit-scrollbar-thumb {
+    background: rgba(234,228,226,0.12);
+    border-radius: 4px;
+  }
+  .index nav::-webkit-scrollbar-thumb:hover { background: rgba(234,228,226,0.25); }
+
+  .home-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(234,228,226,0.75);
+    background: rgba(18,13,11,0.55);
+    border: 1px solid rgba(234,228,226,0.18);
+    border-radius: var(--r-2);
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .home-link:hover {
+    color: rgba(234,228,226,1);
+    border-color: rgba(234,228,226,0.4);
+  }
+
+  /* =========================================================
+     Scoped slide: AI design process diagram
+     (does not modify .slide / .deck base CSS)
+     ========================================================= */
+  .process-slide .brief { margin-bottom: 40px; }
+
+  .process-diagram {
+    position: relative;
+    margin-top: auto;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+  }
+
+  .process-rail {
+    position: absolute;
+    top: 16px;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: var(--canvas-hair);
+    pointer-events: none;
+  }
+
+  .process-stage {
+    position: relative;
+    padding-top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .process-stage .stage-dot {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--canvas-fg);
+    background: var(--canvas-panel);
+    box-sizing: border-box;
+  }
+  .process-stage .stage-dot::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--canvas-fg);
+  }
+
+  .process-stage .stage-num {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--canvas-label);
+    text-transform: uppercase;
+  }
+
+  .process-stage .stage-kicker {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+    margin-top: 2px;
+  }
+
+  .process-stage h3 {
+    font-size: 22px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    color: var(--canvas-fg);
+    margin: 4px 0 0;
+    line-height: 1.1;
+  }
+
+  .process-stage .stage-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(234,228,226,0.62);
+    max-width: none;
+    margin: 4px 0 0;
+  }
+
+  .process-stage .stage-tool {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--canvas-label);
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--canvas-hair);
+  }
+
+  .process-endpoints {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+  .process-endpoints .endpoint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .process-endpoints .endpoint::before,
+  .process-endpoints .endpoint::after {
+    content: "";
+    width: 8px;
+    height: 1px;
+    background: var(--canvas-label);
+  }
+  .process-endpoints .endpoint.in::before { display: none; }
+  .process-endpoints .endpoint.out::after { display: none; }
+
+  @media (max-width: 900px) {
+    .process-diagram { grid-template-columns: 1fr 1fr; gap: 24px; }
+    .process-rail { display: none; }
+  }
+  @media (max-width: 560px) {
+    .process-diagram { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 720px) {
+    .index {
+      position: static;
+      width: auto;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--canvas-hair);
+    }
+    .deck { margin-left: 0; padding: 24px 20px 64px; }
+    .slide { padding: 28px; }
+    .slide h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" title="Back to home" aria-label="Back to home">&larr; Home</a>
+
+<div class="app">
+
+  <aside class="index">
+    <div>
+      <h1 class="deck-title">AI Design Process</h1>
+      <p class="deck-sub">Aither · pipeline</p>
+    </div>
+    <h2>Index</h2>
+    <nav id="index-nav"><!-- auto-populated from .slide sections --></nav>
+  </aside>
+
+  <main class="deck" id="deck">
+
+    <section class="slide process-slide" data-title="AI design pipeline" data-status="open">
+      <span class="tag">Process</span>
+      <h1>From brief to build.</h1>
+      <p class="brief">A four-stage pipeline. <strong>Playground</strong> grounds generation in our design system. <strong>Claude Code</strong> generates. <strong>Rivet</strong> refines in place. <strong>Handoff</strong> ships.</p>
+
+      <div class="process-diagram">
+        <div class="process-rail" aria-hidden="true"></div>
+
+        <div class="process-stage">
+          <span class="stage-dot" aria-hidden="true"></span>
+          <span class="stage-num">01 — Ground</span>
+          <span class="stage-kicker">Playground</span>
+          <h3>Design system host.</h3>
+          <p class="stage-desc">Static site holding our full DS with labeled, rendered components. Every agent references it — output matches tokens by default.</p>
+          <span class="stage-tool">wgiash.github.io/Playground</span>
+        </div>
+
+        <div class="process-stage">
+          <span class="stage-dot" aria-hidden="true"></span>
+          <span class="stage-num">02 — Generate</span>
+          <span class="stage-kicker">Claude Code</span>
+          <h3>Grounded generation.</h3>
+          <p class="stage-desc">Agents generate flows, screens, and PRD templates against Playground. No re-describing the system every prompt.</p>
+          <span class="stage-tool">flows · screens · PRDs</span>
+        </div>
+
+        <div class="process-stage">
+          <span class="stage-dot" aria-hidden="true"></span>
+          <span class="stage-num">03 — Refine</span>
+          <span class="stage-kicker">Rivet</span>
+          <h3>Edit in place.</h3>
+          <p class="stage-desc">Overlay edit tools on the running app. Click an element, prompt the change, done. Feels like a Figma panel on real code.</p>
+          <span class="stage-tool">click · prompt · commit</span>
+        </div>
+
+        <div class="process-stage">
+          <span class="stage-dot" aria-hidden="true"></span>
+          <span class="stage-num">04 — Ship</span>
+          <span class="stage-kicker">Handoff</span>
+          <h3>Out the door.</h3>
+          <p class="stage-desc">Finished designs go to Figma or straight to engineering. The handoff shrinks as generation gets more reliable.</p>
+          <span class="stage-tool">Figma · engineering</span>
+        </div>
+      </div>
+
+      <div class="process-endpoints" aria-hidden="true">
+        <span class="endpoint in">Brief in</span>
+        <span class="endpoint out">Production-ready design out</span>
+      </div>
+
+      <span class="page"></span>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  /*
+    Slides runtime — identical to prd-template.html. Do not hand-edit the
+    index or page numbers; they are derived from .slide sections.
+  */
+  (function () {
+    var deck   = document.getElementById('deck');
+    var nav    = document.getElementById('index-nav');
+    var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+    var total  = slides.length;
+    var pad    = function (n) { return (n < 10 ? '0' : '') + n; };
+
+    var isSigned = function (slide) {
+      return (slide.getAttribute('data-status') || '').toLowerCase() === 'signed';
+    };
+
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      if (!slide.id) slide.id = 's' + num;
+
+      var tag = slide.querySelector('.tag');
+      if (tag) {
+        var raw = (tag.textContent || '').trim();
+        var label = raw.replace(/^\s*\d+\s*[·\-–—]\s*/, '');
+        tag.innerHTML = '';
+        if (isSigned(slide)) {
+          var dot = document.createElement('span');
+          dot.className = 'status-dot is-signed';
+          tag.appendChild(dot);
+        }
+        var text = document.createElement('span');
+        text.textContent = pad(num) + ' · ' + label;
+        tag.appendChild(text);
+      }
+
+      var page = slide.querySelector('.page');
+      if (page) page.textContent = pad(num) + ' / ' + pad(total);
+    });
+
+    nav.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      var titleAttr = slide.getAttribute('data-title');
+      var h1 = slide.querySelector('h1');
+      var label = (titleAttr && titleAttr.trim())
+        || (h1 ? h1.textContent.trim().replace(/[\.!?]+$/, '') : 'Slide ' + num);
+
+      var a = document.createElement('a');
+      a.href = '#' + slide.id;
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = pad(num);
+      var labelEl = document.createElement('span');
+      labelEl.className = 'label';
+      labelEl.textContent = label;
+      a.appendChild(n);
+      a.appendChild(labelEl);
+      if (isSigned(slide)) {
+        var dot = document.createElement('span');
+        dot.className = 'status-dot is-signed';
+        a.appendChild(dot);
+      } else {
+        a.appendChild(document.createElement('span'));
+      }
+      nav.appendChild(a);
+    });
+
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var byId  = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('is-active'); });
+        var a = byId[e.target.id];
+        if (a) a.classList.add('is-active');
+      });
+    }, { root: null, rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+    slides.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+<script src="./firebase-config.js"></script>
+<script src="./comments.js" defer></script>
+</body>
+</html>
