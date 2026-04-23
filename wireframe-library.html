@@ -13559,9 +13559,6 @@ function Topbar({ scale, setScale, resetView, openIndex }) {
         Index
         <span className="kbd">⌘K</span>
       </button>
-      <div className="topbar-help">
-        Drag to pan · <kbd>⌘</kbd>+scroll to zoom · <kbd>0</kbd> reset
-      </div>
       <div className="zoom-controls">
         <button onClick={() => setScale(s => Math.max(0.02, s / 1.25))} aria-label="Zoom out">−</button>
         <span className="zoom-val">{Math.round(scale * 100)}%</span>
