@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Aither · Wireframe Library · Test Batch</title>
 
-<script src="./firebase-config.js"></script>
-<script src="./auth-gate.js"></script>
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/auth-gate.js"></script>
 
 <style>
 /* ========== tokens.css ========== */
@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: "TWK Lausanne Pan";
-  src: url("./fonts/TWKLausannePan-300.otf") format("opentype");
+  src: url("../fonts/TWKLausannePan-300.otf") format("opentype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
@@ -13547,7 +13547,7 @@ function IntroCard({ x, y }) {
 function Topbar({ scale, setScale, resetView, openIndex }) {
   return (
     <div className="topbar" style={{ paddingLeft: 120 }}>
-      <a href="./index.html" title="Back to home" aria-label="Back to home"
+      <a href="../index.html" title="Back to home" aria-label="Back to home"
          style={{ position: 'fixed', top: 12, left: 12, zIndex: 9999, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', fontFamily: "'Space Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(234,228,226,0.75)', background: 'rgba(18,13,11,0.55)', border: '1px solid rgba(234,228,226,0.18)', borderRadius: 4, textDecoration: 'none', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
          onMouseOver={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,1)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.4)'; }}
          onMouseOut={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,0.75)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.18)'; }}
@@ -22450,8 +22450,8 @@ window.addEventListener('wheel', (e) => {
 
 </script>
 
-<script src="./firebase-config.js"></script>
-<script src="./comments.js" defer></script>
-<link rel="stylesheet" href="./comments-brand.css">
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/comments.js" defer></script>
+<link rel="stylesheet" href="../shared/comments-brand.css">
 </body>
 </html>

@@ -3,8 +3,8 @@
    session is confirmed, otherwise redirects to login.html.
 
    Usage — include in <head> of every protected page, BEFORE any app scripts:
-     <script src="./firebase-config.js"></script>
-     <script src="./auth-gate.js"></script>
+     <script src="./shared/firebase-config.js"></script>
+     <script src="./shared/auth-gate.js"></script>
 
    The gate exposes:
      window.AITHER_USER         - { email, displayName, photoURL, uid } once signed in

@@ -7,18 +7,18 @@ An infinite pan/zoom canvas with three zones, left-to-right: **Design System →
 - Rightward is reserved for **Templates**.
 - **Flows** live on the right and stack vertically.
 
-Canonical artifact: [wireframe-library.html](wireframe-library.html) — it inlines tokens, chrome, and app. Source files ([tokens.css](tokens.css), [chrome.css](chrome.css), [canvas.css](canvas.css), [app.jsx](app.jsx), etc.) are the editable sources that get baked into the canonical file.
+Canonical artifact: [wireframe-library.html](apps/wireframe-library.html) — it inlines tokens, chrome, and app. Source files ([tokens.css](system/tokens.css), [chrome.css](system/chrome.css), [canvas.css](system/canvas.css), [app.jsx](system/app.jsx), etc.) are the editable sources that get baked into the canonical file.
 
 ## Standing rules (always apply)
 
-- **Tokens only.** Use only existing tokens in [tokens.css](tokens.css). Do not introduce new color, font, or styling tokens. If something uses a hardcoded value, pull it back to the closest existing token — do not add a new one.
-- **Don't touch infrastructure.** Do not modify [canvas.css](canvas.css), [chrome.css](chrome.css), the comment system ([comments.js](comments.js)), or the pan/zoom logic in [app.jsx](app.jsx) beyond registering new sections.
+- **Tokens only.** Use only existing tokens in [tokens.css](system/tokens.css). Do not introduce new color, font, or styling tokens. If something uses a hardcoded value, pull it back to the closest existing token — do not add a new one.
+- **Don't touch infrastructure.** Do not modify [canvas.css](system/canvas.css), [chrome.css](system/chrome.css), the comment system ([comments.js](shared/comments.js)), or the pan/zoom logic in [app.jsx](system/app.jsx) beyond registering new sections.
 - **Respect the atomic taxonomy.** When adding something, decide which layer it belongs to (Foundations / Atoms / Molecules / Organisms / Patterns) and place it under the correct labeled header. If a new item doesn't fit an existing layer, flag it rather than forcing it.
 - **Preserve zoomed-out readability** of labeled header rows.
-- **Keep the IntroCard accurate.** If a change alters the taxonomy, canonical file, or growth rules, update the card (`IntroCard` and `DsIntro` in [wireframe-library.html](wireframe-library.html); mirrored in [app.jsx](app.jsx) and [app.combined.jsx](app.combined.jsx)).
+- **Keep the IntroCard accurate.** If a change alters the taxonomy, canonical file, or growth rules, update the card (`IntroCard` and `DsIntro` in [wireframe-library.html](apps/wireframe-library.html); mirrored in [app.jsx](system/app.jsx) and [app.combined.jsx](system/app.combined.jsx)).
 - **Flows always include auth and error states.** Any flow added to the Flows zone must show its auth path(s) and error/failure states, not just the happy path. If these are missing from a source template, surface the gap rather than shipping the flow without them.
 
-## Deck template — [prd-template.html](prd-template.html)
+## Deck template — [prd-template.html](apps/prd-template.html)
 
 Separate artifact from the canvas. Single-file, auto-wired deck — this file is the foundation for PRD clones. Do not edit its infrastructure (DOM contract, index sidebar, scroll-spy, back-home button, base `.slide`/`.deck` CSS); clone it and add content inside the clone. When generating or adding slides:
 

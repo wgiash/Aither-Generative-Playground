@@ -140,7 +140,7 @@ function IntroCard({ x, y }) {
 function Topbar({ mode, setMode, scale, setScale, resetView }) {
   return (
     <div className="topbar" style={{ paddingLeft: 120 }}>
-      <a href="./index.html" title="Back to home" aria-label="Back to home"
+      <a href="../index.html" title="Back to home" aria-label="Back to home"
          style={{ position: 'fixed', top: 12, left: 12, zIndex: 9999, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', fontFamily: "'Space Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(234,228,226,0.75)', background: 'rgba(18,13,11,0.55)', border: '1px solid rgba(234,228,226,0.18)', borderRadius: 4, textDecoration: 'none', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
          onMouseOver={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,1)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.4)'; }}
          onMouseOut={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,0.75)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.18)'; }}
