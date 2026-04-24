@@ -1,0 +1,1991 @@
+<!doctype html>
+<!--
+  =====================================================================
+  NOTE TO AGENTS — READ BEFORE EDITING THIS FILE
+  =====================================================================
+  Same DOM contract as prd-template.html:
+    1. Only add <section class="slide"> blocks inside <main class="deck">.
+    2. Do not hand-edit <nav id="index-nav"> — it is rebuilt from slides.
+    3. Do not write slide numbers into .tag or .page by hand.
+    4. Keep <main class="deck" id="deck">, <nav id="index-nav">, and the
+       .tag / <h1> / .page structure per slide.
+    5. Scoped additions go inside the <section> with a new class — never
+       modify .slide / .deck base CSS.
+  =====================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aither · Sunpull PRD</title>
+<link rel="stylesheet" href="../system/tokens.css">
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/auth-gate.js"></script>
+<style>
+  html, body {
+    background: var(--canvas-bg);
+    color: var(--canvas-fg);
+    min-height: 100%;
+    margin: 0;
+    font-family: var(--font-ui);
+    letter-spacing: -0.01em;
+  }
+  html { scroll-behavior: smooth; }
+
+  .app { display: block; }
+
+  /* ---------- Left index (fixed; only the nav list scrolls) ---------- */
+  .index {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    border-right: 1px solid var(--canvas-hair);
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    background: var(--canvas-bg);
+    z-index: 10;
+  }
+
+  .index .deck-title {
+    font-size: 20px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--canvas-fg);
+    margin: 32px 0 0;
+  }
+  .index .deck-sub {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 6px 0 0;
+  }
+
+  .index h2 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--canvas-hair);
+  }
+
+  .index nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .index nav a {
+    display: grid;
+    grid-template-columns: 28px 1fr 12px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--canvas-hair);
+    color: var(--canvas-fg);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+    position: relative;
+  }
+  .index nav a .n {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--canvas-label);
+    padding-top: 2px;
+  }
+  .index nav a:hover { color: var(--canvas-fg); }
+  .index nav a:hover .n { color: var(--canvas-fg); }
+  .index nav a.is-active .n { color: var(--canvas-fg); }
+  .index nav a.is-active { color: var(--canvas-fg); }
+  .index nav a.is-active::before {
+    content: "";
+    position: absolute;
+    margin-left: -20px;
+    margin-top: 14px;
+    width: 2px;
+    height: 14px;
+    background: var(--canvas-fg);
+  }
+  /* Group headings in the index — non-clickable labels that divide the deck
+     into its spec groups (Framing, Master, Product, Brand, Design, Tech,
+     Website, Roadmap, Cross-cutting). Rendered by the script from
+     data-group on the first slide of each group. */
+  .index nav .nav-group {
+    padding: 18px 0 8px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+  .index nav .nav-group:first-child {
+    padding-top: 4px;
+  }
+
+  /* ---------- Deck (right) ---------- */
+  .deck {
+    margin-left: 280px;
+    padding: 48px 64px 96px;
+  }
+
+  .slide {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    /* 16:9 is the baseline shape; content may push a slide taller when it
+       genuinely needs the room. Authors: use judgement — don't go overboard. */
+    aspect-ratio: 16 / 9;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    border-radius: var(--r-2);
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    padding-bottom: 72px; /* leaves room for the bottom-right page stamp */
+    position: relative;
+    scroll-margin-top: 32px;
+  }
+  .slide .tag {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .slide h1 {
+    font-size: 44px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    color: var(--canvas-fg);
+    margin: 12px 0 16px;
+    max-width: 22ch;
+  }
+  .slide p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.7);
+    max-width: 66ch;
+    margin: 0;
+  }
+  .slide .page {
+    position: absolute;
+    right: 48px;
+    bottom: 32px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+
+  /* Status dot (sign-off) */
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    vertical-align: middle;
+    flex: none;
+  }
+  .status-dot.is-open {
+    background: transparent;
+    border: 1px solid var(--canvas-label);
+  }
+  .status-dot.is-signed {
+    background: var(--canvas-fg);
+    border: 1px solid var(--canvas-fg);
+  }
+
+  /* Brief block */
+  .slide .brief {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(234,228,226,0.58);
+    max-width: 70ch;
+    margin: 0 0 16px;
+    padding: 14px 18px;
+    border-left: 2px solid var(--canvas-hair);
+  }
+  .slide .brief strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+  }
+
+  /* Meta row — DRI, read time, prereqs */
+  .slide .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+    margin: 0 0 20px;
+    padding: 12px 0;
+    border-top: 1px solid var(--canvas-hair);
+    border-bottom: 1px solid var(--canvas-hair);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--canvas-label);
+    text-transform: uppercase;
+  }
+  .slide .meta span strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+    margin-left: 6px;
+  }
+
+  /* Body — plain written-out slide content (lists, tables, blanks).
+     No internal scroll: content flows and the slide grows to fit it. */
+  .slide .body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.78);
+    max-width: 78ch;
+    margin: 0;
+  }
+  .slide .body h3 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 18px 0 8px;
+  }
+  .slide .body h3:first-child { margin-top: 0; }
+  .slide .body p { font-size: 14px; max-width: none; color: rgba(234,228,226,0.78); }
+  .slide .body ul, .slide .body ol {
+    padding-left: 20px;
+    margin: 6px 0;
+  }
+  .slide .body li { margin: 3px 0; }
+  .slide .body code, .slide .body pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(234,228,226,0.88);
+    background: rgba(234,228,226,0.04);
+    border-radius: var(--r-1);
+  }
+  .slide .body code { padding: 1px 5px; }
+  .slide .body pre {
+    padding: 12px 14px;
+    margin: 8px 0;
+    white-space: pre;
+    overflow-x: auto;
+    border: 1px solid var(--canvas-hair);
+    background: rgba(0,0,0,0.18);
+  }
+  .slide .body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  .slide .body th, .slide .body td {
+    border-bottom: 1px solid var(--canvas-hair);
+    padding: 6px 10px 6px 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .slide .body th {
+    color: var(--canvas-label);
+    font-weight: var(--w-ui);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Scrollbars */
+  .index nav::-webkit-scrollbar,
+  .slide .body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .index nav::-webkit-scrollbar-thumb,
+  .slide .body::-webkit-scrollbar-thumb {
+    background: rgba(234,228,226,0.12);
+    border-radius: 4px;
+  }
+  .index nav::-webkit-scrollbar-thumb:hover,
+  .slide .body::-webkit-scrollbar-thumb:hover { background: rgba(234,228,226,0.25); }
+
+  /* Back-home link */
+  .home-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(234,228,226,0.75);
+    background: rgba(18,13,11,0.55);
+    border: 1px solid rgba(234,228,226,0.18);
+    border-radius: var(--r-2);
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .home-link:hover {
+    color: rgba(234,228,226,1);
+    border-color: rgba(234,228,226,0.4);
+  }
+
+  @media (max-width: 720px) {
+    .index {
+      position: static;
+      width: auto;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--canvas-hair);
+    }
+    .deck { margin-left: 0; padding: 24px 20px 64px; }
+    .slide { padding: 28px; aspect-ratio: auto; min-height: 80vh; }
+    .slide h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="../index.html" title="Back to home" aria-label="Back to home">&larr; Home</a>
+
+<div class="app">
+
+  <aside class="index">
+    <div>
+      <h1 class="deck-title">Sunpull</h1>
+      <p class="deck-sub">Memory layer · PRD v1.0 · 2026-04-24</p>
+    </div>
+    <h2>Index</h2>
+    <nav id="index-nav"><!-- auto-populated --></nav>
+  </aside>
+
+  <main class="deck" id="deck">
+
+    <!-- ============================================================
+         INTRO (1–6)
+         ============================================================ -->
+
+    <section class="slide" data-title="Cover" data-group="Framing" data-status="open">
+      <span class="tag">Cover</span>
+      <h1>Sunpull.</h1>
+      <p class="brief">The memory layer of Sun OS. B2B memory product for taste-driven teams — LinkedIn saves, Instagram saves, web clippings, forwarded links with context — in one tagged, searchable, API-queryable library.</p>
+      <div class="meta">
+        <span>Version<strong>v1.0</strong></span>
+        <span>Owner<strong>Jasmine</strong></span>
+        <span>Built by<strong>Michael</strong></span>
+        <span>Status<strong>Draft — ready for review</strong></span>
+      </div>
+      <div class="body">
+        <p>This deck carries the full PRD suite for Sunpull: Master (empty — pending portfolio pass), Product (filled — Jazz §1–18), Brand (pending — Wayeez), Design (pending — Wayeez), Tech (filled — Michael Phase 0 §1–14), Website (pending — Wayeez), Roadmap (pending — Jazz / Sundial). Signoff is section-by-section.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         MASTER SUNSPELL PRD
+         ============================================================ -->
+
+    <section class="slide" data-title="Master · Summary" data-group="Master Sunspell PRD" data-status="open">
+      <span class="tag">Master · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page portfolio summary. Read by the whole team to stay synced. Updated quarterly.</p>
+      <div class="body">
+<pre>MASTER SUNSPELL PRD                                    v__ · &lt;date&gt;
+DRI: Jasmine           Status: Draft | In Review | Signed
+
+Thesis (one line):       ______________________________________________
+Operating principle #1:  ______________________________________________
+Live products:           ______________________________________________
+In-flight products:      ______________________________________________
+This quarter's focus:    ______________________________________________
+Next product to launch:  ______________________________________________
+
+Top 3 portfolio opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Cover" data-status="open">
+      <span class="tag">Master · 1</span>
+      <h1>Cover.</h1>
+      <p class="brief">Sunspell as entity. Version. DRI. Lock date.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Thesis" data-status="open">
+      <span class="tag">Master · 2</span>
+      <h1>Thesis.</h1>
+      <p class="brief">Why the incubator exists. The cross-portfolio bet.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Product Map" data-status="open">
+      <span class="tag">Master · 3</span>
+      <h1>Product map.</h1>
+      <p class="brief">Only Sunpull's row can be filled from what Jazz sent (§1.1 / §18). Other rows pending portfolio author pass.</p>
+      <div class="body">
+        <table>
+          <tr><th>Product</th><th>One-liner (from spec)</th><th>Status</th></tr>
+          <tr><td>Sunpull</td><td>Memory layer of Sun OS — B2B memory product for taste-driven teams. Provider product; value compounds as consumers plug in.</td><td>P0 → P1 MVP in flight</td></tr>
+          <tr><td>Sunrun</td><td>— (Sunpull §18 names it as task executor / consumer of Sunpull)</td><td>—</td></tr>
+          <tr><td>Sundial</td><td>— (Sunpull §18 names it as project manager; P1.5 Sunpull consumer)</td><td>—</td></tr>
+          <tr><td>Sunspoke</td><td>— (not referenced in Sunpull spec)</td><td>—</td></tr>
+          <tr><td>Sumani (sibling)</td><td>Consumer product on the shared backend under a separate brand (§1.1, §18). Sunpull stays B2B; Sumani is not a rename.</td><td>future</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Interaction Diagram" data-status="open">
+      <span class="tag">Master · 4</span>
+      <h1>Interaction diagram.</h1>
+      <p class="brief">From Sunpull §18. Shows only the arrows Sunpull participates in — full portfolio diagram pending Master pass.</p>
+      <div class="body">
+        <table>
+          <tr><th>Direction</th><th>From → To</th><th>Payload</th><th>Purpose</th></tr>
+          <tr><td>Provide</td><td>Sunpull → Sunrun</td><td><code>GET /v1/saves?tags=…</code> response</td><td>Pull inputs for Run</td></tr>
+          <tr><td>Provide</td><td>Sunpull → Sunrun</td><td>Webhook: <code>save.created</code>, <code>save.tag_changed</code></td><td>Trigger Live Run update</td></tr>
+          <tr><td>Provide</td><td>Sunpull → Sundial (P1.5)</td><td><code>GET /v1/saves?tags=…&amp;since=…</code></td><td>Surface new saves in weekly mission brief</td></tr>
+          <tr><td>Consume</td><td>Sunrun → Sunpull</td><td><code>GET sunrun/workflows</code> (optional)</td><td>Populate workflow dropdown in tag management</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Two-Path North Star" data-status="open">
+      <span class="tag">Master · 5</span>
+      <h1>Two-path north star.</h1>
+      <p class="brief">Sunpull's §1.1 echoes the two-path commitment literally: "each subscribable AND eventual unified OS." Portfolio-level logic for why both paths matter pending Master pass.</p>
+      <div class="body">
+        <p><strong>Sunpull instance of two-path</strong> (from §1.1, §18):</p>
+        <ul>
+          <li><strong>Standalone.</strong> Aether team browses + rediscovers saves via masonry grid. B2B internal use case. Valuable alone — replaces scattered bookmarks and platform-native save folders.</li>
+          <li><strong>+ Sunrun.</strong> Tags feed Run inputs; Live Runs auto-update when new matching saves arrive.</li>
+          <li><strong>+ Sundial (P1.5).</strong> Weekly mission brief surfaces relevant new saves.</li>
+        </ul>
+        <p>Sibling product (Sumani) ships on the shared backend under a separate brand — Sunpull stays B2B permanently (§1.1, §18).</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Operating Principles" data-status="open">
+      <span class="tag">Master · 6</span>
+      <h1>Operating principles.</h1>
+      <p class="brief">5–8 non-negotiables that make a product recognizably Sunspell. Inherited by every product.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Shared Services" data-status="open">
+      <span class="tag">Master · 7</span>
+      <h1>Shared services.</h1>
+      <p class="brief">Services Sunpull explicitly cross-references as "same as Sunrun/Sundial" — direct quotes from her spec. Portfolio-level inventory (auth, billing, analytics, support, identity, DRIs per service) pending Master pass.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Claude API</strong> — "Opus for dialogue + content understanding; Sonnet for tag suggestion + classification + preview extraction. Same dual-model strategy as Sunrun §8.2 / Sundial §7.3." (Sunpull §8.5)</li>
+          <li><strong>Secrets / token rotation</strong> — "Consumer bearer tokens rotated quarterly; stored in Doppler (matches Sunrun S5)." (Sunpull §9 NF4)</li>
+          <li><strong>Hosting</strong> — "Render / Railway / Fly (Michael's call; prefer same as Sundial/Sunrun for operational consistency)." (Sunpull §13 O1)</li>
+          <li><strong>Design system</strong> — "Match Aither design system (Geist fonts, light theme, subtle borders, minimal chrome)." (Sunpull §10.6)</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Data Portability &amp; Privacy" data-status="open">
+      <span class="tag">Master · 8</span>
+      <h1>Data portability &amp; privacy.</h1>
+      <p class="brief">Cross-product rules. Subscribe-to-X-do-I-get-Y-data. Portfolio privacy stance.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Portfolio Roadmap" data-status="open">
+      <span class="tag">Master · 9</span>
+      <h1>Portfolio roadmap.</h1>
+      <p class="brief">Sequencing logic (why Sundial before Sunrun, etc). Graduate / kill criteria per product.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Open Questions" data-status="open">
+      <span class="tag">Master · 10</span>
+      <h1>Open questions.</h1>
+      <p class="brief">Two questions from Sunpull §17 that are portfolio-level rather than Sunpull-internal. Rest of Master opens pending portfolio author pass.</p>
+      <div class="body">
+        <ol>
+          <li><strong>Workflow catalog source of truth</strong> (Sunpull §17 Q5). "Does Sunpull read <code>GET sunrun/workflows</code> at runtime, or is it manually mirrored in Sunpull config?" — cross-product contract ownership.</li>
+          <li><strong>Sundial consumer timing</strong> (Sunpull §17 Q10). "Commit to P1.5 for Sundial wiring, or later? Recommendation: keep the query contract live from V1, push Sundial implementation to P1.5." — portfolio sequencing.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         PRODUCT SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Product · Summary" data-group="Product Spec" data-status="open">
+      <span class="tag">Product · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page product summary. Pulled from sunpull_requirements.md §1. Read by the whole team.</p>
+      <div class="body">
+<pre>PRODUCT SPEC · Sunpull                                 v1.0 · 2026-04-24
+DRI: Jasmine           Status: Draft — ready for review
+Built by: Michael
+
+One-liner:              Memory layer of Sun OS — B2B memory product for taste-driven teams.
+North Star:             Every AI acting on the team's behalf pulls current team taste
+                        from Sunpull, not training-time priors.
+Primary persona:        High-agency taste-maker on a taste-driven team.
+Mental model:           Pinterest masonry + source-native preview + queryable API.
+Current phase:          P0 → P1 (external MVP)
+Business model:         B2B subscription (open — see §17 Q1 / Master inheritance).
+Launch target (P1):     ~7 weeks (1–2 wk Phase 0 + 5 wk V1)
+Success metric (P1):    ≥1 Live Sunrun Run sources inputs from Sunpull (M6) @ Week 8
+Kill criteria:          if founder rediscovery &lt; 1 useful save/wk by W8 then sunset
+
+Top 3 opens:
+  1. Hosting + object storage choice (R2 vs S3 vs Backblaze)
+  2. Default privacy for new saves — company vs personal by time-of-day?
+  3. Sundial consumer timing — V1 contract live, P1.5 implementation</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Cover" data-status="open">
+      <span class="tag">Product · 1 · Framing</span>
+      <h1>Sunpull · Product Spec.</h1>
+      <p class="brief">v1.0 · 2026-04-24. DRI Jasmine; built by Michael. Prereq Master Sunspell PRD signed (in flight — portfolio pass pending). Gates unlocked on full signoff: Brand Spec + Tech Spec + Roadmap Spec may begin.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · North Star" data-status="open">
+      <span class="tag">Product · 2 · Framing</span>
+      <h1>North star.</h1>
+      <p class="brief">Two framings, both true. Sunpull is a B2B memory product — subscribable standalone today, context substrate for the unified Sun OS tomorrow. The consumer sibling (Sumani) ships on the shared backend under a separate brand; Sunpull stays B2B permanently.</p>
+      <div class="body">
+        <ol>
+          <li><strong>Memory artifact for the team's AI.</strong> Every Sun and any agent reads from Sunpull so output reflects <em>current</em> team taste, not training-time priors.</li>
+          <li><strong>Taste profile the team owns.</strong> Sunpull makes a team's taste legible, queryable, and portable — instead of scattered across a dozen platforms that own the signal.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Thesis" data-status="open">
+      <span class="tag">Product · 3 · Framing</span>
+      <h1>Thesis.</h1>
+      <p class="brief">A taste-driven team's edge is pattern recognition — noticing what's good before it's obvious. Today that signal leaks across LinkedIn saves, Instagram DMs, Pinterest, Are.na, Slack links, iMessage. Sunpull consolidates it. A provider product whose value compounds as more Suns plug in, but meaningful on day one as a rediscovery surface.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Problem" data-status="open">
+      <span class="tag">Product · 4 · Framing</span>
+      <h1>Problem.</h1>
+      <p class="brief">Three specific pains. No solutioning.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Founder context can't be reused.</strong> Sunrun Runs generate from generic priors instead of taste-encoded refs. Team members can't find what the founder found. The same ref gets rediscovered.</li>
+          <li><strong>AI stays stale.</strong> Every LLM call starts from training-time knowledge; nothing connects the agent to what Aether is actually paying attention to this month.</li>
+          <li><strong>The user doesn't own their taste.</strong> Instagram, TikTok, Pinterest hold the saves — the user is a tenant of their own preferences.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Mental Model" data-status="open">
+      <span class="tag">Product · 5 · Framing</span>
+      <h1>Mental model.</h1>
+      <p class="brief">Pinterest masonry grid meets source-native preview — a visual, browseable library where LinkedIn posts render like LinkedIn, Instagram looks like Instagram, web articles render cleanly. Serendipitous rediscovery matters as much as query. Query API is the hidden second surface — consumers (Sunrun, Sundial) read through it; the founder never sees it.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Personas" data-status="open">
+      <span class="tag">Product · 6 · Framing</span>
+      <h1>Personas.</h1>
+      <p class="brief">Primary: high-agency taste-maker on a taste-driven team. Plus role-based access across Aither + two system consumers (Sunrun, Sundial). Key separation: personal vs. company saves, enforced at the query layer.</p>
+      <div class="body">
+        <table>
+          <tr><th>Role</th><th>Access</th><th>Primary interactions</th></tr>
+          <tr><td>Founder</td><td>Full read/write (personal + company)</td><td>Import, browse, tag, search, forward</td></tr>
+          <tr><td>Michael</td><td>Read company saves</td><td>Build / research</td></tr>
+          <tr><td>Wayeez</td><td>Read company saves (design/brand)</td><td>Brand + UX refs</td></tr>
+          <tr><td>Senior designers</td><td>Read scoped to projects</td><td>Project refs</td></tr>
+          <tr><td>Sunrun (system)</td><td>Read-only API + webhook</td><td>Pulls as Run inputs; receives save events</td></tr>
+          <tr><td>Sundial (system)</td><td>Read-only API (P1.5+)</td><td>Surfaces new saves in weekly mission brief</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Principles" data-status="open">
+      <span class="tag">Product · 7 · Framing</span>
+      <h1>Principles.</h1>
+      <p class="brief">Ten non-negotiables from §3. P1–P7 shape UX; P8–P10 shape provider + portfolio discipline. P8/P9 explicitly cite Sunrun/Sundial — candidates to promote to Master Operating Principles.</p>
+      <div class="body">
+        <ol>
+          <li><strong>P1 Capture is frictionless.</strong> &lt;10s; zero typing required for basic capture.</li>
+          <li><strong>P2 Organization is dialogue-based, not forced upfront.</strong> Sunpull asks in batches, learns patterns, applies retroactively.</li>
+          <li><strong>P3 Tags tie to Sunrun workflows.</strong> Taxonomy designed with Sunrun in mind; mapping is explicit.</li>
+          <li><strong>P4 Masonry visual browse.</strong> Not a list. Serendipitous rediscovery matters.</li>
+          <li><strong>P5 Source-native preview.</strong> LinkedIn looks like LinkedIn; IG visual intact; web rendered cleanly.</li>
+          <li><strong>P6 Personal and company separated.</strong> Enforcement at the query layer, not just UI.</li>
+          <li><strong>P7 Progressive disclosure.</strong> Simple surface for browse/save; advanced on deeper engagement.</li>
+          <li><strong>P8 Provider-first discipline.</strong> Stable query contract; breaking changes versioned with overlap window.</li>
+          <li><strong>P9 Scope tight.</strong> New ingestion / tags / endpoints require real pain signal. Matches Sunrun P8 / Sundial P8.</li>
+          <li><strong>P10 The user's saves are Aither's memory.</strong> Every choice serves the memory-to-AI pipeline.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Competitive Landscape" data-status="open">
+      <span class="tag">Product · 8 · Strategy</span>
+      <h1>Competitive landscape.</h1>
+      <p class="brief">Not authored in sunpull_requirements.md. §2 names what taste-makers "already buy": Are.na, Mymind, Raindrop, Readwise, Pinterest Premium. Differentiators implicit in §1.1 (provider API, B2B team access, AI memory substrate). <strong>Flag for Jazz</strong> — blocks signoff.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Positioning" data-status="open">
+      <span class="tag">Product · 9 · Strategy</span>
+      <h1>Positioning.</h1>
+      <p class="brief">Sunpull is the memory layer of Sun OS — a B2B memory product for taste-driven teams. It captures everything worth remembering into a single masonry-grid library that's tagged, searchable, and queryable via an API that other Suns read from. Aether is the first customer; design / creative / strategy shops are the wedge. Sunpull stays B2B permanently — a consumer sibling (Sumani) ships separately on the shared backend.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Business Model" data-status="open">
+      <span class="tag">Product · 10 · Strategy</span>
+      <h1>Business model.</h1>
+      <p class="brief">Not authored in sunpull_requirements.md. §1.1 asserts Sunpull is each-subscribable AND part of unified OS (same two-path commitment as Master §5). Tier structure, trial, bundle-vs-standalone, and billing cadence TBD. <strong>Flag for Jazz</strong> — blocks signoff; likely inherits pricing pattern from Master.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Dependencies" data-status="open">
+      <span class="tag">Product · 11 · Strategy</span>
+      <h1>Dependencies.</h1>
+      <p class="brief">Sunpull is a provider — stands alone, but gates unlock when consumers connect. Distinct from Interop (which describes runtime contracts, see Tech).</p>
+      <div class="body">
+        <ul>
+          <li><strong>Phase 0 prereq:</strong> nothing external. Founder's LinkedIn + Instagram exports, a Telegram bot, Postgres + S3.</li>
+          <li><strong>V1 prereq:</strong> Claude API access; Chrome + Arc extension dev sign-in; object storage (R2/S3/Backblaze — open).</li>
+          <li><strong>Sunrun consumer:</strong> reads <code>/v1/saves</code>, webhook recipient for <code>save.created</code> / <code>save.tag_changed</code>. Wires in once Sunrun ships.</li>
+          <li><strong>Sundial consumer:</strong> reads <code>/v1/saves?tags=...&amp;since=...</code>. Contract live in V1; implementation P1.5.</li>
+          <li><strong>Master PRD:</strong> Operating Principles (P8/P9/P10) inherit from Master. Master is currently empty scaffold — signoff on Master blocks Sunpull final signoff.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Phases" data-status="open">
+      <span class="tag">Product · 12 · Scope</span>
+      <h1>Phases.</h1>
+      <p class="brief">Two ship phases (§14). Phase 0 just gets data in — no UI, no tags, no API. V1 layers everything else on top.</p>
+      <div class="body">
+        <h3>Phase 0 · 1–2 weeks · DB + ingestion only</h3>
+        <ul>
+          <li>Postgres + S3 + deploy</li>
+          <li>LinkedIn export importer</li>
+          <li>Instagram export importer</li>
+          <li>Telegram bot (text ingestion)</li>
+          <li>iMessage shortcut if time</li>
+          <li>No UI — query via Postico / CLI</li>
+        </ul>
+        <h3>V1 · 5 weeks · external MVP</h3>
+        <ul>
+          <li>W1 · Claude tag suggestion + categorization dialogue</li>
+          <li>W2 · Web UI — masonry library + search + source detail</li>
+          <li>W3 · Browser extension (Chrome + Arc) + untagged inbox</li>
+          <li>W4 · Consumer API (query + webhook) + tag management</li>
+          <li>W5 · Archetype + first-time user flow + launch polish</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Go-to-Market" data-status="open">
+      <span class="tag">Product · 13 · Scope</span>
+      <h1>Go-to-market.</h1>
+      <p class="brief">Not authored in sunpull_requirements.md. §1.1 names the wedge (design / creative / strategy shops, Aither alpha); channel, first-10 sequence, and in-market positioning are undefined. <strong>Flag for Jazz</strong> — blocks signoff.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Success Metrics" data-status="open">
+      <span class="tag">Product · 14 · Scope</span>
+      <h1>Success metrics.</h1>
+      <p class="brief">Six metrics measured Week 8 post-launch (§1.4). Import coverage, tag completeness, capture latency, consumer query perf, founder rediscovery, provider value.</p>
+      <div class="body">
+        <table>
+          <tr><th>ID</th><th>Bar</th><th>Metric</th><th>Threshold</th></tr>
+          <tr><td>M1</td><td>Historical coverage</td><td>% LinkedIn + IG saves imported</td><td>≥ 95%</td></tr>
+          <tr><td>M2</td><td>Tag completeness</td><td>% saves tagged (dialogue + AI-confirmed)</td><td>≥ 80%</td></tr>
+          <tr><td>M3</td><td>Capture speed</td><td>Median new-save latency (extension / text)</td><td>&lt; 10s</td></tr>
+          <tr><td>M4</td><td>Consumer query perf</td><td>Sunrun p95 on tag filter ≤ 1,000 matches</td><td>&lt; 500ms</td></tr>
+          <tr><td>M5</td><td>Founder rediscovery</td><td>Useful saved items found via search/browse</td><td>≥ 1 / wk</td></tr>
+          <tr><td>M6</td><td>Provider value</td><td>Active users with Live Runs sourcing from Sunpull</td><td>≥ 1</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Kill Criteria" data-status="open">
+      <span class="tag">Product · 15 · Scope</span>
+      <h1>Kill criteria.</h1>
+      <p class="brief">Not explicit in sunpull_requirements.md. Implicit trigger: M5 breach (founder rediscovery &lt; 1/wk by W8) signals the rediscovery surface doesn't work. M6 breach (no Live Run sources from Sunpull by W8) signals the provider thesis doesn't work. <strong>Flag for Jazz</strong> — formalize thresholds.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Risks" data-status="open">
+      <span class="tag">Product · 16 · Scope</span>
+      <h1>Risks.</h1>
+      <p class="brief">Primary risks: platform data-access, cost creep, provider-SLO, adoption. Seeded from Tech §13 + Product §11 + §10. Not itemized in Jazz's spec — seed list here; flag for Jazz to rank.</p>
+      <div class="body">
+        <ul>
+          <li><strong>LinkedIn/IG ToS drift.</strong> Exports are the only compliant channel. Format changes (which LinkedIn has made before) break the parser. Mitigation: version-sniff on header; fail loud.</li>
+          <li><strong>Media cost creep.</strong> Heavy IG/video saves grow S3 fast. Mitigation: per-item cap, warn at 100 MB, skip at 500 MB.</li>
+          <li><strong>Claude cost.</strong> Soft-warn at 80% of estimated budget per import job (§10 NF6).</li>
+          <li><strong>Provider dependency.</strong> Sunpull down degrades Sunrun + Sundial. Target 99.5% uptime (§10 NF2) — higher bar than peers.</li>
+          <li><strong>Adoption / compounding failure.</strong> If team never queries and no Sunrun Live Run sources from Sunpull, provider thesis breaks. M6 tracks.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         BRAND SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Brand · Summary" data-group="Brand Spec" data-status="open">
+      <span class="tag">Brand · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page brand summary. Positioning, archetype, tone, NOT list, falsifiable tests.</p>
+      <div class="body">
+<pre>BRAND SPEC · &lt;product name&gt;                            v__ · &lt;date&gt;
+DRI: Wayeez            Status: Draft | In Review | Signed
+
+Positioning line:       ______________________________________________
+Archetype (one quote):  "_____________________________________________"
+Tone (4 adjectives):    ______, ______, ______, never ______
+House phrases (3):
+  • ___________________________________________________________________
+  • ___________________________________________________________________
+  • ___________________________________________________________________
+
+NOT (top 3):
+  × Not ______________________________________________________________
+  × Not ______________________________________________________________
+  × Not ______________________________________________________________
+
+Falsifiable tests:
+  □ Logo-removed recognition
+  □ __________________________________________________________________
+  □ __________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Cover" data-status="open">
+      <span class="tag">Brand · 1 · Identity</span>
+      <h1>Cover.</h1>
+      <p class="brief">Name, version, DRI, link to Product Spec, prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Positioning Line" data-status="open">
+      <span class="tag">Brand · 2 · Identity</span>
+      <h1>Positioning line.</h1>
+      <p class="brief">One sentence. The thing the product <em>is</em>. Passes the <strong>logo-removed test</strong>: if someone saw a touchpoint with no logo, would they still know it's this product?</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Archetype" data-status="open">
+      <span class="tag">Brand · 3 · Identity</span>
+      <h1>Archetype.</h1>
+      <p class="brief">Personality as an <strong>imagined quote</strong>. e.g., "The friend who always remembers what you liked." One sentence compresses personality better than a values list.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · NOT List" data-status="open">
+      <span class="tag">Brand · 4 · Identity</span>
+      <h1>NOT list.</h1>
+      <p class="brief">4–5 negative positioning statements. "Not a tech brand." "Not a luxury brand." Negative positioning is a first-class artifact — defines against, not just for.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Brand Principles" data-status="open">
+      <span class="tag">Brand · 5 · Voice</span>
+      <h1>Brand principles.</h1>
+      <p class="brief">5 numbered. Format: <strong>noun-phrase + foil</strong>. e.g., 01 Human First (Real &gt; polished); 02 Emotion Over Production (Imperfect is better). Principles are paired with the tension they resolve — never abstract virtues alone.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Tone" data-status="open">
+      <span class="tag">Brand · 6 · Voice</span>
+      <h1>Tone.</h1>
+      <p class="brief"><strong>4 adjectives, last one negative.</strong> e.g., "Warm, inclusive, slightly intimate, never try-hard." The negative forces the author to define against something.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · House Phrases" data-status="open">
+      <span class="tag">Brand · 7 · Voice</span>
+      <h1>House phrases.</h1>
+      <p class="brief">3–5 reusable hero taglines. e.g., "This is from all of us." Provide the Claude prompt fuel for consistent copy generation.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Microcopy Patterns" data-status="open">
+      <span class="tag">Brand · 8 · Voice</span>
+      <h1>Microcopy patterns.</h1>
+      <p class="brief"><strong>Before/after table.</strong> Transactional copy → brand-voice copy. e.g., "Record response" → "Say something back". Teaches the translation rule, not just final copy.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Microcopy Classes" data-status="open">
+      <span class="tag">Brand · 9 · System</span>
+      <h1>Microcopy classes.</h1>
+      <p class="brief">Canonical copy per state: empty · loading · error · success · permission-denied · rate-limited. Claude pulls from here for every flow.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Logo &amp; Spatial Logic" data-status="open">
+      <span class="tag">Brand · 10 · System</span>
+      <h1>Logo &amp; spatial logic.</h1>
+      <p class="brief">Usage rules. Forbidden treatments. Absolute don'ts ("Never X"), no "prefer" language.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Color" data-status="open">
+      <span class="tag">Brand · 11 · System</span>
+      <h1>Color.</h1>
+      <p class="brief">Per color: <strong>name / role / one-sentence rationale</strong>. Rationale is the critical column — "Reads 'alive' without 'urgent'" — not just swatches.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Typography" data-status="open">
+      <span class="tag">Brand · 12 · System</span>
+      <h1>Typography.</h1>
+      <p class="brief">Font roles + absolute don'ts. e.g., "Never mix serif and sans at the same size."</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Imagery &amp; Attitude" data-status="open">
+      <span class="tag">Brand · 13 · System</span>
+      <h1>Imagery &amp; attitude.</h1>
+      <p class="brief">Photography / illustration / motion stance. Brand attitude, not implementation detail.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Falsifiable Tests" data-status="open">
+      <span class="tag">Brand · 14 · Verification</span>
+      <h1>Falsifiable tests.</h1>
+      <p class="brief">3–5 tests that determine if the brand is working. e.g., "Logo-removed recognition." "Single-CTA rule holds." "Never paywall the message." Assertions that could be <em>disproved</em> — makes the Brand Spec usable in review, not aspirational.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         DESIGN SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Design · Summary" data-group="Design Spec" data-status="open">
+      <span class="tag">Design · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">Seeded from sunpull_requirements.md §5 (Functional Requirements) + §10 (UI Requirements) + §5.10 (First-Time Flow) + §11 (Edge Cases). Flow count / state coverage pending a Wayeez authoring pass.</p>
+      <div class="body">
+<pre>DESIGN SPEC · Sunpull                                  v0.1 · 2026-04-24
+DRI: Wayeez            Status: Draft — seeded from Jazz's spec, not DRI-reviewed
+
+IA (top-level surfaces):   Library · Source Detail · Categorization Dialogue · Tag Management · Extension Popup
+Happy path (one sentence): Connect a source → ingest runs → archetype reveal at ~20% → land on populated library
+                           filtered to untagged. (§5.10 FR-O1 → FR-O6)
+P0 use cases (3 groups, from §5):
+  UC-01  Ingest historical saves (LinkedIn + Instagram exports)  · §5.1 / §5.2
+  UC-02  Capture ongoing (browser extension + text forward)      · §5.5 / §5.6
+  UC-03  Browse + rediscover (masonry + search + source detail)  · §5.7 / §5.8
+
+Key surfaces (3):          Library (masonry) · Source Detail (right panel) · Extension Popup
+P0 feature count:          60   Flows defined: TBD   States covered: TBD / 8
+Traceability checklist:    □ all features → use cases → flows → surfaces → events  (see §15 A1–A9)
+
+Top 3 opens:
+  1. Archetype reveal UX — inline / persistent / profile-only? (Sunpull §17 Q11)
+  2. Archetype regeneration cadence — on-demand / N-saves / weekly? (§17 Q12)
+  3. Design system alignment with Aither DS (§10.6) — components pass still pending</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Cover" data-status="open">
+      <span class="tag">Design · 1 · Structure</span>
+      <h1>Cover.</h1>
+      <p class="brief">Name, links to Product + Brand + Tech spec, prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Mental Model Recap" data-status="open">
+      <span class="tag">Design · 2 · Structure</span>
+      <h1>Mental model recap.</h1>
+      <p class="brief">Pinterest masonry grid meets source-native preview — a visual, browseable library where LinkedIn looks like LinkedIn, Instagram looks like Instagram, web articles render cleanly. Serendipitous rediscovery matters as much as query. (Recap of Product · Mental Model; derived from §3 P4–P5 + §10.1.)</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · IA Map" data-status="open">
+      <span class="tag">Design · 3 · Structure</span>
+      <h1>IA map.</h1>
+      <p class="brief">Surfaces listed in §10 UI Requirements + §5.7–5.8 Library views. Navigation model + hierarchy diagram pending a Wayeez pass.</p>
+      <div class="body">
+        <h3>Top-level surfaces (from §10)</h3>
+        <ul>
+          <li><strong>Library view</strong> (§10.1) — masonry grid, 3–5 columns, left sidebar tag nav, top bar search + filters + sort.</li>
+          <li><strong>Source detail view</strong> (§10.2) — right-side ~480px panel, slide-in, keyboard nav.</li>
+          <li><strong>Categorization dialogue</strong> (§10.3) — chat-style interface (Slack or web).</li>
+          <li><strong>Tag management</strong> (§10.4) — dedicated settings view; create / rename / merge / delete / reorder; workflow mapping dropdown.</li>
+          <li><strong>Extension popup</strong> (§10.5) — 360×400px, keyboard-first.</li>
+        </ul>
+        <h3>Library sub-views (from §5.7)</h3>
+        <ul>
+          <li>Main masonry (default)</li>
+          <li>Clusters view (§5.7 FR-U4) — alternate browse mode grouping similar saves via embedding similarity.</li>
+          <li>Untagged inbox (§5.7 FR-U5) — dedicated view of saves missing tags.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Component Inventory" data-status="open">
+      <span class="tag">Design · 4 · Structure</span>
+      <h1>Component inventory.</h1>
+      <p class="brief">Shared UI primitives: name, purpose, where used. Inherits Brand Spec visual system; adds product-specific components. Prevents reinvention; enables Unified OS migration.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · User Journey" data-status="open">
+      <span class="tag">Design · 5 · Experience</span>
+      <h1>User journey.</h1>
+      <p class="brief">Partial — §5.10 First-Time User Flow is the only lifecycle stage Jazz authored. Discover / install / activate / habituate / lapse / reactivate / invite pending a Wayeez pass.</p>
+      <div class="body">
+        <h3>Onboard → First Value (§5.10 literal)</h3>
+        <ol>
+          <li><strong>FR-O1</strong> — Founder prompted to connect first source (LI upload, IG upload, or extension install). At least one required.</li>
+          <li><strong>FR-O2</strong> — Loading state with progress bar + ETA ("Importing 847 saves… 34% complete · ~3 min left").</li>
+          <li><strong>FR-O3</strong> — At ~20% ingest, Sunpull generates a preliminary archetype via Claude — 1–2 sentence taste profile, inline reveal.</li>
+          <li><strong>FR-O4</strong> — On full ingest, user lands in library filtered to <code>untagged</code>. No forced tagging gate.</li>
+          <li><strong>FR-O5</strong> — Onboarding skippable at any step.</li>
+          <li><strong>FR-O6</strong> — Archetype stored + displayed in profile area; optional library header surface; regeneratable on demand.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Feature Inventory" data-status="open">
+      <span class="tag">Design · 6 · Experience</span>
+      <h1>Feature inventory.</h1>
+      <p class="brief">Grouped by §5 FR families (60 FR codes total across 10 groups). Full per-row table (Use Case / Flow / Surface / Phase / Status fields) pending a Wayeez pass.</p>
+      <div class="body">
+        <table>
+          <tr><th>F-ID range</th><th>Group</th><th>Source §</th><th>Count</th></tr>
+          <tr><td>FR-L1 → L6</td><td>Historical Ingestion — LinkedIn</td><td>§5.1</td><td>6</td></tr>
+          <tr><td>FR-I1 → I6</td><td>Historical Ingestion — Instagram</td><td>§5.2</td><td>6</td></tr>
+          <tr><td>FR-D1 → D5</td><td>Categorization Dialogue</td><td>§5.3</td><td>5</td></tr>
+          <tr><td>FR-T1 → T7</td><td>Tag Engine</td><td>§5.4</td><td>7</td></tr>
+          <tr><td>FR-B1 → B6</td><td>Ongoing Ingestion — Browser Extension</td><td>§5.5</td><td>6</td></tr>
+          <tr><td>FR-X1 → X5</td><td>Ongoing Ingestion — Text Forwarding</td><td>§5.6</td><td>5</td></tr>
+          <tr><td>FR-U1 → U5</td><td>Library — Browse &amp; Search</td><td>§5.7</td><td>5</td></tr>
+          <tr><td>FR-V1 → V5</td><td>Source Detail View</td><td>§5.8</td><td>5</td></tr>
+          <tr><td>FR-G1 → G9</td><td>Consumer API (provider surface)</td><td>§5.9</td><td>9</td></tr>
+          <tr><td>FR-O1 → O6</td><td>First-Time User Flow</td><td>§5.10</td><td>6</td></tr>
+          <tr><td><strong>Total</strong></td><td></td><td></td><td><strong>60</strong></td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Use Cases" data-status="open">
+      <span class="tag">Design · 7 · Experience</span>
+      <h1>Use cases.</h1>
+      <p class="brief">3–5 for P0, more for P1. Per case: trigger / goal / success criteria. NO screens.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Happy Path" data-status="open">
+      <span class="tag">Design · 8 · Experience</span>
+      <h1>Happy path.</h1>
+      <p class="brief">From §5.10 First-Time User Flow. The single end-to-end ritual Sunpull must deliver on day one. No branches, no errors.</p>
+      <div class="body">
+        <ol>
+          <li>User lands on Sunpull; prompt to connect a source (LI export, IG export, or extension install). <em>FR-O1</em></li>
+          <li>User uploads LI export. Loading state: progress bar + ETA. <em>FR-O2</em></li>
+          <li>~20% complete, archetype inline-reveals. <em>FR-O3</em></li>
+          <li>Ingest completes; user lands in library, filter set to <code>untagged</code>. <em>FR-O4</em></li>
+          <li>User sees a populated masonry grid for the first time → core value delivered.</li>
+        </ol>
+        <p>M5 tracks whether the founder rediscovers ≥1 useful saved item per week through this surface (Product §1.4).</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · User Flows" data-status="open">
+      <span class="tag">Design · 9 · Experience</span>
+      <h1>User flows.</h1>
+      <p class="brief">One per use case. Per flow: entry points · decision branches · exit points · states table (Empty / Loading / Partial / Full / Error / Edge / Offline / Permission-denied) · <strong>Build Notes for Claude</strong> (constraints, reference components, anti-patterns).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Surfaces" data-status="open">
+      <span class="tag">Design · 10 · Experience</span>
+      <h1>Surfaces.</h1>
+      <p class="brief">From §10 UI Requirements. High-level shape only — interaction matrices + wireframe thumbs pending a Wayeez pass.</p>
+      <div class="body">
+        <h3>Library view · primary surface (§10.1)</h3>
+        <ul>
+          <li>Masonry grid, 3–5 columns depending on viewport. Cards 200–320px wide, variable height.</li>
+          <li>Hover: elevate, show quick actions. Empty-filter state: "No saves match these filters." Untagged badge on items without tags.</li>
+        </ul>
+        <h3>Source detail view (§10.2)</h3>
+        <ul>
+          <li>Right-side panel ~480px wide; slide-in animation.</li>
+          <li>Keyboard: <code>Esc</code> to close, arrow keys to navigate between saves. Focus management for accessibility.</li>
+        </ul>
+        <h3>Categorization dialogue (§10.3)</h3>
+        <ul>
+          <li>Chat-style interface (Slack or web). Sample items shown with inline tagging. Progress indicator: "tagged 120 of ~800."</li>
+        </ul>
+        <h3>Tag management (§10.4)</h3>
+        <ul>
+          <li>Dedicated settings view. Create / rename / merge / delete / reorder.</li>
+          <li>Workflow mapping UI — dropdown populated from Sunrun's live workflow catalog; fallback: text input with warning.</li>
+          <li>Usage counts + last-used dates.</li>
+        </ul>
+        <h3>Extension popup (§10.5)</h3>
+        <ul>
+          <li>Compact 360×400px. Preview + title + tags + context input + save button. Keyboard-first — tab through fields, Enter to save.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Onboarding" data-status="open">
+      <span class="tag">Design · 11 · Detail</span>
+      <h1>Onboarding.</h1>
+      <p class="brief">From §5.10 First-Time User Flow. Six requirements define the ritual. Screen-by-screen wireframes pending Wayeez pass.</p>
+      <div class="body">
+        <ol>
+          <li><strong>FR-O1</strong> · Connect a first source (LI upload / IG upload / extension install). At least one required to proceed.</li>
+          <li><strong>FR-O2</strong> · Loading state with progress bar + ETA ("Importing 847 saves… 34% complete · ~3 min left"). Real-time updates.</li>
+          <li><strong>FR-O3</strong> · At ~20% ingest, preliminary archetype reveals inline. Example copy: "Your archetype: a sharp curator of operator-toned systems thinking with a soft edge for design-led typography." Archetype regenerates after full ingest + after categorization dialogue.</li>
+          <li><strong>FR-O4</strong> · On full ingest, land in masonry grid filtered to <code>untagged</code>. No forced tagging gate; user can browse immediately.</li>
+          <li><strong>FR-O5</strong> · Skippable at any step. Empty library is a valid state; user can add saves gradually via extension or text.</li>
+          <li><strong>FR-O6</strong> · Archetype stored and displayed in the profile area. Optional low-key library-header surface. Founder can regenerate on demand.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Error Taxonomy" data-status="open">
+      <span class="tag">Design · 12 · Detail</span>
+      <h1>Error taxonomy.</h1>
+      <p class="brief">From §11 Edge Cases. 14 scenarios authored. Canonical microcopy pending Brand Spec (not yet authored).</p>
+      <div class="body">
+        <table>
+          <tr><th>ID</th><th>Scenario</th><th>Behaviour</th></tr>
+          <tr><td>EC1</td><td>LinkedIn export has broken/deleted URLs</td><td>Store metadata + export content; mark <code>source_unavailable</code></td></tr>
+          <tr><td>EC2</td><td>Instagram export missing media files</td><td>Store caption + URL; placeholder image</td></tr>
+          <tr><td>EC3</td><td>Web save requires login</td><td>Store visible content; flag <code>requires_auth</code></td></tr>
+          <tr><td>EC4</td><td>Extension fires on page blocking content scripts</td><td>Graceful error; suggest manual text forward</td></tr>
+          <tr><td>EC5</td><td>Text forward with malformed URL</td><td>Reply asking for clarification</td></tr>
+          <tr><td>EC6</td><td>Tag deletion referenced by &gt;100 saves</td><td>Confirmation modal + option to reassign</td></tr>
+          <tr><td>EC7</td><td>Categorization dialogue interrupted</td><td>Resumable at any time</td></tr>
+          <tr><td>EC8</td><td>Duplicate detection false positive</td><td>Allow user override</td></tr>
+          <tr><td>EC9</td><td>Storage quota exceeded</td><td>Archive oldest unviewed saves; notify user</td></tr>
+          <tr><td>EC10</td><td>Consumer query returns 0 saves for a tag</td><td>Log to consumer activity trail; weekly founder notify</td></tr>
+          <tr><td>EC11</td><td>Consumer bearer token expired/revoked</td><td>401 + rotation instructions; webhooks paused</td></tr>
+          <tr><td>EC12</td><td>Webhook endpoint 5xx &gt;24h</td><td>Auto-pause subscription; notify consumer + founder</td></tr>
+          <tr><td>EC13</td><td><code>workflow_key</code> references unknown workflow</td><td>Allow save/edit; flag in Monday digest</td></tr>
+          <tr><td>EC14</td><td>Consumer queries a personal-only tag</td><td>Return empty + log attempt; don't error</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Accessibility Baseline" data-status="open">
+      <span class="tag">Design · 13 · Detail</span>
+      <h1>Accessibility baseline.</h1>
+      <p class="brief">Keyboard nav, screen reader, contrast, reduced motion. MVP floor — retrofit is brutal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Instrumentation" data-status="open">
+      <span class="tag">Design · 14 · Gate</span>
+      <h1>Instrumentation / event taxonomy.</h1>
+      <p class="brief">Every event fired · owner (Design defines, Tech implements) · which Metric it serves.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Traceability Checklist" data-status="open">
+      <span class="tag">Design · 15 · Gate</span>
+      <h1>Traceability checklist.</h1>
+      <p class="brief">From §15 Acceptance Criteria — 9 go-live gates. These are the observable conditions for signing Sunpull V1 off. Feature → use case → flow → surface → event traceability pending Wayeez pass.</p>
+      <div class="body">
+        <ol>
+          <li><strong>A1</strong> · LinkedIn + Instagram exports ingested for founder's historical saves with ≥95% coverage.</li>
+          <li><strong>A2</strong> · Dialogue-driven categorization completes with ≥80% of imported saves tagged.</li>
+          <li><strong>A3</strong> · Browser extension captures a save in &lt;10 seconds end-to-end (Chrome + Arc).</li>
+          <li><strong>A4</strong> · Consumer query API passes contract test from Sunrun — <code>GET /v1/saves?tags=sales&amp;include_personal=false</code> returns expected payload under 500 ms.</li>
+          <li><strong>A5</strong> · Webhook emitter fires <code>save.created</code> events to Sunrun stub endpoint within 2s; 3× retry verified on 5xx.</li>
+          <li><strong>A6</strong> · Personal-save leak test — consumer query with <code>include_personal=false</code> returns zero personal saves across 100 randomized tag combinations.</li>
+          <li><strong>A7</strong> · <code>workflow_key</code> mapping verified against Sunrun catalog; unknown keys flagged in Monday digest, not silently accepted.</li>
+          <li><strong>A8</strong> · Founder completes 1 week using Sunpull for rediscovery (meets M5: ≥1 useful find / week).</li>
+          <li><strong>A9</strong> · Consumer audit log contains a row per query; sampled review confirms no content leakage.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         TECH SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Tech · Summary" data-group="Tech Spec" data-status="open">
+      <span class="tag">Tech · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page tech summary. Pulled from sunpull_tech_spec.md §1 — Phase 0 scope only (ingest + text → DB). V1 extension authored separately once Phase 0 lands.</p>
+      <div class="body">
+<pre>TECH SPEC · Sunpull (Phase 0)                          v1.0 · 2026-04-24
+DRI: Michael           Status: Draft — ready for Michael review
+Scope: Phase 0 only (ingest + text → DB). V1 extension in §12.
+
+Architecture (one line):  Node API + worker → Postgres + S3; Telegram webhook.
+Stack:                    Node/Express + pg-boss (Postgres queue) + Render
+Data store:               Postgres (saves, import_jobs) + object storage (media)
+Auth:                     Admin bearer token (Doppler); Telegram secret + sender whitelist
+
+Reads from other SUNs:    None in Phase 0. V1: Sunrun workflow catalog (optional).
+Writes to other SUNs:     None in Phase 0. V1: webhook emitter (save.created / save.tag_changed).
+External dependencies:    Telegram Bot API · LinkedIn/IG export format · URL preview
+
+Per-user cost estimate (Phase 0): ~$25–40/mo. V1 adds Claude + embeddings.
+Unified-OS lock-in risks (top 2):
+  × Save schema is load-bearing; V1 adds tables but must not change Save.
+  × Consumer API /v1/* — breaking changes require /v2/* + overlap window.
+
+Top 3 tech opens:
+  1. Object storage — R2 vs S3 vs Backblaze (recommend R2, no egress).
+  2. Queue — pg-boss (Phase 0) vs BullMQ + Redis (V1 if workers demand).
+  3. Founder's Telegram user_id — confirm before first deploy.</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cover" data-status="open">
+      <span class="tag">Tech · 1 · Architecture</span>
+      <h1>Sunpull · Tech Spec (Phase 0).</h1>
+      <p class="brief">v1.0 · 2026-04-24 · DRI Michael. Prereq: Product Spec §1–4, §7, §8. Scope: Phase 0 only (1–2 weeks). Gates unlocked on full signoff: Phase 0 build can begin. V1 tech spec authored separately once Phase 0 is live.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Architecture" data-status="open">
+      <span class="tag">Tech · 2 · Architecture</span>
+      <h1>Architecture.</h1>
+      <p class="brief">Five components, all on Render. No scheduler, webhook emitter, query API, admin UI, or Claude worker in Phase 0 — those are V1.</p>
+      <div class="body">
+<pre>LinkedIn export (.zip)  ───┐
+Instagram export (.zip) ───┼─── Ingestion API (Node/Express) ──── Content processor (worker) ──── Postgres (Save, ImportJob)
+Text (Telegram webhook) ───┘                                            │
+                                                                        └──── S3/R2 (media + staging uploads)</pre>
+        <h3>Components</h3>
+        <ol>
+          <li><strong>Ingestion API</strong> — HTTP endpoints: export uploads + Telegram webhook</li>
+          <li><strong>Content processor</strong> — worker; parses exports, fetches URL previews, downloads media</li>
+          <li><strong>Postgres</strong> — Save + ImportJob entities</li>
+          <li><strong>Object storage</strong> — media blobs + .zip staging holding</li>
+          <li><strong>Telegram bot</strong> — registered via BotFather; webhook → ingestion API</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Data Model" data-status="open">
+      <span class="tag">Tech · 3 · Architecture</span>
+      <h1>Data model.</h1>
+      <p class="brief">Two tables in Phase 0: <code>saves</code> + <code>import_jobs</code>. All others (tags, archetypes, consumer_subscriptions, etc.) are V1 net-new. The Save schema is the load-bearing decision — get it right now; V1 is mechanical.</p>
+      <div class="body">
+<pre>saves
+  id                 uuid PK default gen_random_uuid()
+  source_platform    text check (linkedin|instagram|web|text|manual)
+  source_url         text
+  title, content_text, preview_image_url  text
+  media_urls         text[] default '{}'
+  author_name, author_handle  text
+  posted_at, saved_at, imported_at  timestamptz
+  user_context_note  text
+  is_personal        boolean default false
+  archived_at        timestamptz
+  unique (source_platform, source_url) where source_url is not null
+  index (saved_at desc), (source_platform), (is_personal) where is_personal = false
+
+import_jobs
+  id                 uuid PK
+  source_platform    text
+  uploaded_file_key  text          (S3 key of staged .zip)
+  status             text (pending|processing|complete|failed)
+  items_imported, items_duplicates, items_failed  int
+  started_at, completed_at  timestamptz
+  error_log          text</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Ingestion / Storage" data-status="open">
+      <span class="tag">Tech · 4 · Architecture</span>
+      <h1>Ingestion / storage.</h1>
+      <p class="brief">Three ingestion paths in Phase 0 — LinkedIn export, Instagram export, Telegram text. Media in private object storage; staging .zips auto-deleted after 7 days.</p>
+      <div class="body">
+        <h3>Paths</h3>
+        <ul>
+          <li><strong>LinkedIn</strong> · <code>POST /admin/imports/linkedin</code> · multipart .zip → parse <code>Saved_Posts.csv</code> → upsert on <code>source_url</code>. OG fetch for preview (best-effort).</li>
+          <li><strong>Instagram</strong> · <code>POST /admin/imports/instagram</code> · multipart .zip → parse <code>saved/saved_posts.json</code> → copy media to object storage → upsert.</li>
+          <li><strong>Telegram</strong> · <code>POST /webhooks/telegram</code> · validated via secret header + sender whitelist → parse URL + context + <code>personal</code> suffix → OG fetch → insert save.</li>
+          <li><strong>iMessage</strong> (optional, if time) · <code>POST /webhooks/imessage</code> — same payload shape as Telegram.</li>
+        </ul>
+        <h3>Storage</h3>
+        <ul>
+          <li>Postgres (Render managed) — single DB, daily backups.</li>
+          <li><code>sunpull-media-&lt;env&gt;</code> · permanent, signed URLs only.</li>
+          <li><code>sunpull-imports-&lt;env&gt;</code> · staging, 7-day lifecycle auto-delete.</li>
+          <li>Object keys: <code>&lt;platform&gt;/&lt;save_id&gt;/&lt;filename&gt;</code>.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · External Integrations" data-status="open">
+      <span class="tag">Tech · 5 · Integration</span>
+      <h1>External integrations.</h1>
+      <p class="brief">Three live dependencies in Phase 0. Claude is <em>not</em> Phase 0 — wired in V1 Week 1 for tag suggestion + dialogue.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Telegram Bot API</strong> · <code>api.telegram.org/bot&lt;TOKEN&gt;/…</code>. Webhook secret validated via header.</li>
+          <li><strong>URL preview</strong> · <code>open-graph-scraper</code> + <code>metascraper</code> fallback. 10s timeout. Fall back to <code>&lt;title&gt;</code>. Never block ingest on preview failure.</li>
+          <li><strong>LinkedIn / Instagram data exports</strong> · user-uploaded .zip. No API; scraping is ToS-prohibited. Re-export periodically to capture new saves.</li>
+          <li><strong>Claude API</strong> · NOT Phase 0. Opus for dialogue, Sonnet for tag suggestion (V1).</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Auth / Permissions" data-status="open">
+      <span class="tag">Tech · 6 · Integration</span>
+      <h1>Auth / permissions.</h1>
+      <p class="brief">Founder-only access in Phase 0. No multi-user OAuth until V1. References Master Shared Services — which is currently empty scaffold.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Admin endpoints</strong> (<code>/admin/imports/*</code>) — <code>Authorization: Bearer &lt;token&gt;</code>, stored in Doppler.</li>
+          <li><strong>Telegram webhook</strong> — secret token in header (BotFather-configured) + sender <code>user_id</code> whitelist.</li>
+          <li><strong>Deferred to V1:</strong> full OAuth, multi-user, team scoping, per-consumer service-to-service bearer tokens with quarterly rotation.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cross-Product Interop" data-status="open">
+      <span class="tag">Tech · 7 · Integration</span>
+      <h1>Cross-product interop.</h1>
+      <p class="brief">Phase 0 has <em>no</em> cross-product interop — Sunpull stands alone. V1 wires the provider contract defined in Product §5.9 / §8.7. Sundial implementation deferred to P1.5.</p>
+      <div class="body">
+        <h3>V1 — Provides (Sunpull → Sunrun / Sundial)</h3>
+        <ul>
+          <li><code>GET /v1/saves?tags=...&amp;include_personal=false&amp;since=&lt;ISO8601&gt;</code></li>
+          <li>Webhook: <code>save.created</code>, <code>save.tag_changed</code>. Consumer registers URL + optional tag filter.</li>
+          <li>Per-consumer bearer token, scoped to workspace, rotated quarterly.</li>
+          <li>Rate limit: 120 queries/min/consumer. Webhook retries 3x exponential backoff.</li>
+          <li>Versioning: <code>/v1/*</code>. Breaking changes ship as <code>/v2/*</code> with ≥2-week overlap.</li>
+        </ul>
+        <h3>V1 — Consumes (Sunpull → Sunrun, optional)</h3>
+        <ul>
+          <li><code>GET sunrun/workflows</code> — populates workflow-key dropdown in tag management. Fallback: manual text input with warning.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Phased Tech Approach" data-status="open">
+      <span class="tag">Tech · 8 · Ops</span>
+      <h1>Phased tech approach.</h1>
+      <p class="brief">Phase 0 deliberately minimal — just ingest + text → DB. No UI, no tags, no Claude, no consumer API. Everything else defers to V1.</p>
+      <div class="body">
+        <h3>Phase 0 ships</h3>
+        <ul>
+          <li>LinkedIn + Instagram export ingestion</li>
+          <li>Telegram bot (text ingestion)</li>
+          <li>Postgres schema + object storage + Render deploy</li>
+          <li>Health check + Sentry</li>
+        </ul>
+        <h3>Phase 0 explicitly defers</h3>
+        <ul>
+          <li>Web UI (query via Postico / CLI)</li>
+          <li>Browser extension</li>
+          <li>Categorization dialogue + Claude integration</li>
+          <li>Tag engine, workflow mapping</li>
+          <li>Consumer API (query + webhook emission)</li>
+          <li>Archetype / first-time user flow</li>
+          <li>Clusters / embeddings / semantic search</li>
+        </ul>
+        <h3>V1 (5 weeks on top of Phase 0)</h3>
+        <ul>
+          <li>W1 Claude · W2 Web UI · W3 Extension · W4 Consumer API + tag mgmt · W5 Archetype + polish</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Observability" data-status="open">
+      <span class="tag">Tech · 9 · Ops</span>
+      <h1>Observability.</h1>
+      <p class="brief">Minimal in Phase 0. Consumer-SLO dashboard added in V1 when the query API lands. Implements Design Spec Instrumentation taxonomy (Design Spec still empty scaffold).</p>
+      <div class="body">
+        <ul>
+          <li><strong>Health check</strong> · <code>GET /health</code> — DB ping + Telegram <code>getWebhookInfo</code> OK.</li>
+          <li><strong>Logging</strong> — structured JSON to stdout (Render captures).</li>
+          <li><strong>Errors</strong> — Sentry DSN; alerts on import failure + webhook handler errors → Michael + founder.</li>
+          <li><strong>Metrics</strong> — none in Phase 0. V1 adds consumer-SLO dashboard tracking query p95 latency + webhook delivery success.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Privacy &amp; Data Handling" data-status="open">
+      <span class="tag">Tech · 10 · Ops</span>
+      <h1>Privacy &amp; data handling.</h1>
+      <p class="brief">Founder-only in Phase 0 — <code>is_personal</code> flag is recorded per save but team-query enforcement activates in V1 with the consumer API.</p>
+      <div class="body">
+        <ul>
+          <li>All data founder-only in Phase 0.</li>
+          <li><code>is_personal</code> recorded on every save; no query-layer exposure yet.</li>
+          <li>Media in private object storage — no public URLs.</li>
+          <li>Deletion: manual via DB + object-storage console in Phase 0. Proper cascade + 30-day soft-delete lands with V1.</li>
+          <li>LLM calls: none in Phase 0. V1: never use training-opt-in providers; personal-tagged saves excluded from LLM calls that persist outputs.</li>
+          <li>Audit log: V1 only (immutable, append-only; content hashes for sensitive fields).</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cost Model" data-status="open">
+      <span class="tag">Tech · 11 · Ops</span>
+      <h1>Cost model.</h1>
+      <p class="brief">~$25–40/mo in Phase 0. Claude + embeddings + scale costs land with V1. Informs Product · Business Model (currently unauthored).</p>
+      <div class="body">
+        <h3>Phase 0 monthly estimate</h3>
+        <table>
+          <tr><th>Item</th><th>~/month</th></tr>
+          <tr><td>Render service (web + worker)</td><td>$15–25</td></tr>
+          <tr><td>Render Postgres (starter)</td><td>$7</td></tr>
+          <tr><td>Object storage (~10GB + egress)</td><td>$5</td></tr>
+          <tr><td>Telegram Bot API</td><td>free</td></tr>
+          <tr><td>Sentry (dev plan)</td><td>free</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>$25–40</strong></td></tr>
+        </table>
+        <h3>V1 additions (not estimated yet)</h3>
+        <ul>
+          <li>Claude API — Opus + Sonnet dual-model (matches Sunrun §8.2)</li>
+          <li>Embeddings (pgvector or Pinecone, batched daily)</li>
+          <li>Consumer query load — rate-limited at 120/min/consumer</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Migration Path to Unified OS" data-status="open">
+      <span class="tag">Tech · 12 · Future-proofing</span>
+      <h1>Migration path to unified OS.</h1>
+      <p class="brief">Phase 0 schema is forward-compatible. V1 additions are all <em>net-new tables</em> referencing <code>saves.id</code> — no Save schema changes. Save is the load-bearing decision.</p>
+      <div class="body">
+        <h3>V1 net-new tables</h3>
+        <ul>
+          <li><code>tags</code>, <code>save_tags</code> — tag engine</li>
+          <li><code>archetypes</code> — taste profile</li>
+          <li><code>consumer_subscriptions</code>, <code>consumer_query_logs</code> — provider API</li>
+          <li><code>categorization_sessions</code> — dialogue state</li>
+          <li><code>save_clusters</code> — embedding groups</li>
+        </ul>
+        <h3>V1 net-new services</h3>
+        <ul>
+          <li>Claude worker (tag suggestion + dialogue)</li>
+          <li>Query API (<code>/v1/saves?tags=…</code>)</li>
+          <li>Webhook emitter</li>
+          <li>Web frontend (read-only against DB initially)</li>
+          <li>Browser-extension backend (reuses content processor)</li>
+        </ul>
+        <h3>Non-negotiable in Phase 0</h3>
+        <p>To avoid V1 pain: uuid PKs, <code>source_url</code> uniqueness per platform, <code>is_personal</code> on every save, <code>media_urls</code> as array.</p>
+        <h3>Unified-OS lock-in</h3>
+        <p>Consumer contract lives under <code>/v1/*</code>. Breaking changes ship as <code>/v2/*</code> with ≥2-week overlap; consumers notified in advance.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Tech Risks" data-status="open">
+      <span class="tag">Tech · 13 · Future-proofing</span>
+      <h1>Tech risks.</h1>
+      <p class="brief">Five Phase 0 risks; each has a stated mitigation in §13.</p>
+      <div class="body">
+        <ul>
+          <li><strong>LinkedIn export format drift.</strong> LI has changed the CSV layout before. <em>Mitigation:</em> version-sniff on header row; fail loud with a clear error — never silently accept wrong-shaped data.</li>
+          <li><strong>Instagram export size.</strong> Heavy users have multi-GB exports. <em>Mitigation:</em> stream-unzip to disk (not memory); chunked upload API.</li>
+          <li><strong>Telegram webhook drops.</strong> Telegram retries but occasionally loses deliveries. <em>Mitigation:</em> idempotent on <code>message.message_id</code>; log every receipt before processing.</li>
+          <li><strong>URL preview blocks.</strong> Many sites block bot user agents. <em>Mitigation:</em> accept save with minimal metadata; never block ingest on preview failure.</li>
+          <li><strong>Media cost creep.</strong> Heavy video saves grow storage fast. <em>Mitigation:</em> per-item cap — warn at 100 MB, skip at 500 MB, log.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Open Tech Questions" data-status="open">
+      <span class="tag">Tech · 14 · Future-proofing</span>
+      <h1>Open tech questions.</h1>
+      <p class="brief">Six Phase 0 opens. Most are Michael's call; Q5 needs founder to confirm Telegram user_id before first deploy.</p>
+      <div class="body">
+        <ol>
+          <li><strong>Object storage</strong> — R2 vs S3 vs Backblaze. Cost check at ~10GB + growth. <em>Recommend:</em> R2 (no egress fees).</li>
+          <li><strong>Queue</strong> — pg-boss vs BullMQ + Redis. <em>Recommend:</em> pg-boss Phase 0; BullMQ in V1 if workers demand.</li>
+          <li><strong>URL preview library</strong> — <code>open-graph-scraper</code> vs roll own. <em>Recommend:</em> <code>open-graph-scraper</code> + <code>metascraper</code> fallback.</li>
+          <li><strong>Content-hash dedup</strong> — Phase 0 dedupes on <code>(platform, source_url)</code>. Same article from different URLs — defer content-hash to V1.</li>
+          <li><strong>Founder's Telegram user_id</strong> — confirm + whitelist before first deploy.</li>
+          <li><strong>Admin upload auth</strong> — bearer-only via Doppler, or add IP allowlist? <em>Recommend:</em> bearer-only at this scale.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         WEBSITE SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Website · Summary" data-group="Website Spec" data-status="open">
+      <span class="tag">Website · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page site summary. Goal, conversion, hero, CTA, selected asset tier.</p>
+      <div class="body">
+<pre>WEBSITE SPEC · &lt;product name&gt;                          v__ · &lt;date&gt;
+DRI: Wayeez            Status: Draft | In Review | Signed
+Launch version:        P1 | P2 | ___       Target launch: &lt;date&gt;
+
+URL:                    _______________________________________________
+Goal:                   _______________________________________________
+Success threshold:      _____% conversion on _________________________
+
+Selected hero:          "______________________________________________"
+Selected subhead:       "______________________________________________"
+Primary CTA:            "______________________________________________"
+
+Selected asset tier:    Easy · Medium · Difficult
+Rationale:              _______________________________________________
+Deferred tiers → when:  _______________________________________________
+
+Top 3 opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Cover" data-status="open">
+      <span class="tag">Website · 1 · Foundation</span>
+      <h1>Cover.</h1>
+      <p class="brief">Product name, URL, version, DRI, prereq check, target launch date.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Goal" data-status="open">
+      <span class="tag">Website · 2 · Foundation</span>
+      <h1>Goal.</h1>
+      <p class="brief">Primary conversion goal (sign-up · waitlist · direct subscribe) + secondary goals. Success threshold per goal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Audience" data-status="open">
+      <span class="tag">Website · 3 · Foundation</span>
+      <h1>Audience.</h1>
+      <p class="brief">Visitor personas — often <em>different</em> from product personas (curious prospect ≠ active user). Traffic sources expected (direct / search / social / referral).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Hero / Tagline" data-status="open">
+      <span class="tag">Website · 4 · Message</span>
+      <h1>Hero / tagline.</h1>
+      <p class="brief"><strong>3–5 candidate taglines + subheads, ranked.</strong> Selected one marked with rationale. Passes Brand Spec logo-removed test.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Message Hierarchy" data-status="open">
+      <span class="tag">Website · 5 · Message</span>
+      <h1>Message hierarchy.</h1>
+      <p class="brief">What a visitor must grok in <strong>10s / 30s / 2min</strong>. Forces the author to decide priority.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · CTAs" data-status="open">
+      <span class="tag">Website · 6 · Message</span>
+      <h1>CTAs.</h1>
+      <p class="brief">Primary + secondary CTAs. Copy variants. Destinations. Hierarchy rule (one primary per page).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Sitemap" data-status="open">
+      <span class="tag">Website · 7 · Content</span>
+      <h1>Sitemap.</h1>
+      <p class="brief">Page list + purpose per page. Typical: Landing · Pricing · About · FAQ · Changelog · Legal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Content Blocks" data-status="open">
+      <span class="tag">Website · 8 · Content</span>
+      <h1>Content blocks.</h1>
+      <p class="brief">Per page: section list in order. e.g., Landing = Hero → Problem → How → Features → Social Proof → Pricing → CTA → Footer.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Copy" data-status="open">
+      <span class="tag">Website · 9 · Content</span>
+      <h1>Copy.</h1>
+      <p class="brief">Headlines, subheads, body, CTAs per section. Inherits Brand Spec voice + House Phrases + Microcopy Patterns.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Asset Requirements" data-status="open">
+      <span class="tag">Website · 10 · Asset</span>
+      <h1>Asset requirements — tiered concepts.</h1>
+      <p class="brief"><strong>Three parallel concepts, easy → difficult</strong>, each with scope, mock/reference, estimated time, cost. Visitor-experience differences. Decision row: which concept ships + deferred-to list.</p>
+      <div class="body">
+        <table>
+          <tr><th>Tier</th><th>Concept</th><th>Time</th><th>Cost</th><th>Visitor experience</th></tr>
+          <tr><td>Easy</td><td>Static landing · existing wireframes · stock-ish imagery</td><td>1–2 days</td><td>$</td><td>Clear, competent, generic</td></tr>
+          <tr><td>Medium</td><td>Custom photography · product mockups · subtle motion</td><td>1–2 weeks</td><td>$$</td><td>Distinctive, considered</td></tr>
+          <tr><td>Difficult</td><td>Interactive demo · scroll-driven animation · bespoke 3D</td><td>3–6 weeks</td><td>$$$</td><td>Memorable, shareable</td></tr>
+          <tr><td><strong>Decision</strong></td><td colspan="4">Selected tier + rationale. Deferred-to list for non-selected tiers (e.g., "Medium at launch, Difficult planned for P2").</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Social Proof" data-status="open">
+      <span class="tag">Website · 11 · Asset</span>
+      <h1>Social proof.</h1>
+      <p class="brief">Testimonials · logos · case studies. What we have vs what we need. Placeholder strategy if we ship without.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · SEO / Meta" data-status="open">
+      <span class="tag">Website · 12 · Operations</span>
+      <h1>SEO / meta.</h1>
+      <p class="brief">Title · meta description · OG image · schema markup · target keywords · canonical URLs.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Analytics / Conversion Tracking" data-status="open">
+      <span class="tag">Website · 13 · Operations</span>
+      <h1>Analytics / conversion tracking.</h1>
+      <p class="brief">Events fired · UTM structure · funnel definition · dashboard. References Design Spec Event Taxonomy so product and site share instrumentation.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         ROADMAP SPEC
+         ============================================================ -->
+
+    <section class="slide" data-title="Roadmap · Summary" data-group="Roadmap Spec" data-status="open">
+      <span class="tag">Roadmap · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">Seeded from Product §14 Build Phases. Weekly slate mechanics (Sundial slate / tasks in flight / capacity / decision log) are dynamic and empty until Sundial exists — Jazz hand-drafts while in bootstrap mode per the master template.</p>
+      <div class="body">
+<pre>ROADMAP SPEC · Sunpull                                 v0.1 · 2026-04-24
+DRI: Jasmine           Dynamic — updated weekly (bootstrap mode; Sundial not live)
+
+Current phase:          P0 (Phase 0 · 1–2 wk) → P1 (V1 · 5 wk)
+Launch target:          ~7 weeks from Phase 0 kickoff
+
+This week's proposed slate:   (authored by Jazz hand — Sundial will auto-generate once live)
+
+Tasks in flight:         —   Tasks blocked: —   Tasks done this week: —
+Capacity used / avail:   —   Biggest blocker: —
+
+Top 3 cross-product deps (from Product §8.7 / §18):
+  1. Sunrun workflow catalog — Sunpull reads GET sunrun/workflows for tag mapping
+  2. Sunrun webhook endpoint — Sunpull POSTs save.created / save.tag_changed
+  3. Sundial (P1.5) — reads /v1/saves?tags=…&amp;since=… for weekly mission brief</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Cover" data-status="open">
+      <span class="tag">Roadmap · 1 · Structure</span>
+      <h1>Cover.</h1>
+      <p class="brief">Product name, current week, DRI, phase, launch target.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Task Inventory" data-status="open">
+      <span class="tag">Roadmap · 2 · Structure</span>
+      <h1>Task inventory.</h1>
+      <p class="brief">From Product §14 Build Phases + Tech Spec §1. Week-by-week deliverables Jazz authored. Row-by-row T-ID decomposition + effort sizing + DRI pending Jazz/Michael pass once Phase 0 is scoped.</p>
+      <div class="body">
+        <table>
+          <tr><th>Week</th><th>Deliverable (as authored)</th><th>Acceptance</th><th>Phase</th></tr>
+          <tr><td>P0-1</td><td>Postgres schema + S3 + deploy + LinkedIn export import + Telegram bot text ingestion</td><td>Founder uploads LI export and texts links to Telegram bot; both land in DB with media in S3</td><td>Phase 0</td></tr>
+          <tr><td>P0-2</td><td>Instagram export import + URL preview fetch + basic observability + iMessage (if time)</td><td>Founder uploads IG export; all three ingestion paths working end-to-end in production; Sentry catches failures</td><td>Phase 0</td></tr>
+          <tr><td>W1</td><td>Claude tag suggestion + categorization dialogue engine</td><td>Dialogue produces tag taxonomy with workflow mapping against Phase 0 imports</td><td>V1</td></tr>
+          <tr><td>W2</td><td>Web UI — masonry library + search + source detail</td><td>Can browse, filter, search, click into save</td><td>V1</td></tr>
+          <tr><td>W3</td><td>Browser extension (Chrome + Arc) + untagged inbox</td><td>Save via extension works end-to-end; bulk categorization works</td><td>V1</td></tr>
+          <tr><td>W4</td><td>Consumer API (query + webhook) + tag management</td><td>Sunrun can pull saves by tag; webhook fires on save.created / save.tag_changed; tag management UI functional</td><td>V1</td></tr>
+          <tr><td>W5</td><td>Archetype + first-time user flow + polish</td><td>Onboarding complete; archetype generated from imported saves; launch-ready</td><td>V1</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Dependency Graph" data-status="open">
+      <span class="tag">Roadmap · 3 · Planning</span>
+      <h1>Dependency graph.</h1>
+      <p class="brief">Inter-task and cross-product blockers. "T-04 blocks T-11." "Needs X from Sunpull before starting."</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Capacity &amp; Effort Budget" data-status="open">
+      <span class="tag">Roadmap · 4 · Planning</span>
+      <h1>Capacity &amp; effort budget.</h1>
+      <p class="brief">Team capacity per week (person-days). Running totals per person. Used to calibrate Sundial's slate size.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Weekly Recommendations" data-status="open">
+      <span class="tag">Roadmap · 5 · Planning</span>
+      <h1>Weekly recommendations.</h1>
+      <p class="brief">Sundial's current proposal. Each task flagged with rationale ("why this now?") + Accept / Decline / Defer decision. Max 4–6 tasks per person per week.</p>
+      <div class="body">
+<pre>WEEK OF &lt;date&gt; — PROPOSED SLATE
+
+For Wayeez (capacity: 4 days this week):
+  ☐ T-01  Build Save ingestion · M · 2 days
+          Why: P0 critical path. Unblocks T-03.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+
+  ☐ T-03  Onboarding flow states · M · 2 days
+          Why: Depends on T-01. Tight fit this week if T-01 ships.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+
+For Michael (capacity: 3 days this week):
+  ☐ T-02  Wire Sunpull API auth · S · 0.5 days
+          Why: P0, unblocks Michael + Wayeez both.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+  ...</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Decision Log" data-status="open">
+      <span class="tag">Roadmap · 6 · Decision</span>
+      <h1>Decision log.</h1>
+      <p class="brief">History of accepted/declined suggestions. Format: date · task · suggested · decision · rationale · decided by. Learning signal for Sundial over time.</p>
+      <div class="body">
+        <table>
+          <tr><th>Date</th><th>Task</th><th>Suggested</th><th>Decision</th><th>Rationale</th><th>Decided by</th></tr>
+          <tr><td>2026-04-30</td><td>T-04</td><td>W3</td><td>Deferred to W5</td><td>Cost work premature pre-MVP</td><td>Jasmine</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Cross-Product Coordination" data-status="open">
+      <span class="tag">Roadmap · 7 · Decision</span>
+      <h1>Cross-product coordination.</h1>
+      <p class="brief">From Product §18 + §8.7 / §8.8. Contracts Sunpull shares with Sunrun and Sundial. Sequencing: contracts live in V1; Sundial implementation P1.5.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Sunrun query</strong> (Product FR-G1, §8.7) — Sunrun calls <code>GET /v1/saves?tags=…&amp;include_personal=false</code> at Run-execute time. Lands when Sunrun ships and Sunpull V1 is live.</li>
+          <li><strong>Sunrun webhook</strong> (FR-G5, §8.7) — Sunpull POSTs <code>save.created</code> / <code>save.tag_changed</code> events. Required for Live Run triggers.</li>
+          <li><strong>Sunrun workflow catalog</strong> (§8.7, §17 Q5) — Sunpull reads <code>GET sunrun/workflows</code> to populate the workflow dropdown in tag management. Fallback: manual list when standalone.</li>
+          <li><strong>Sundial query</strong> (§8.8) — Sundial reads <code>GET /v1/saves?tags=…&amp;since=…</code> for the weekly mission brief. Contract live in V1; <strong>Sundial-side implementation deferred to P1.5.</strong></li>
+          <li><strong>Reverse rule</strong> (Product §18): don't ship a Sunrun workflow without the matching Sunpull tag ready <em>when a Sunpull consumer is connected</em>. Standalone Sunrun Runs exempt.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Weekly Retro" data-status="open">
+      <span class="tag">Roadmap · 8 · Gate</span>
+      <h1>Weekly retro.</h1>
+      <p class="brief">5 min: what got done · what didn't · why · carry forward. Feeds into next week's slate.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         CROSS-CUTTING MECHANICS
+         ============================================================ -->
+
+    <section class="slide" data-title="Signoff ritual" data-group="Cross-cutting" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Signoff ritual.</h1>
+      <p class="brief">Weekly 30-min review. 1–2 slides per session. 3 slides/week/person is realistic. Async default: comments in doc; meeting only if unresolved. Any edit to a Signed slide flips status to In Review.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Handoff gates" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Handoff gates.</h1>
+      <p class="brief">What unlocks what. Sign a parent spec, its children can begin.</p>
+      <div class="body">
+        <table>
+          <tr><th>Gate</th><th>Unlocks</th></tr>
+          <tr><td>Master Sunspell PRD signed</td><td>Any Product Spec may start</td></tr>
+          <tr><td>Product Spec signed</td><td>Brand Spec + Tech Spec + Roadmap Spec may start</td></tr>
+          <tr><td>Brand Spec signed</td><td>Design Spec + Website Spec may start</td></tr>
+          <tr><td>Design Spec signed</td><td>Production UI build may begin</td></tr>
+          <tr><td>Tech Spec signed</td><td>Production backend build may begin</td></tr>
+          <tr><td>Website Spec signed</td><td>Site build may begin</td></tr>
+          <tr><td>Roadmap Spec populated</td><td>Execution begins; Sundial surfaces weekly slates</td></tr>
+          <tr><td>Design + Tech both signed</td><td>P0 build complete target set</td></tr>
+          <tr><td>Website Spec signed + P1 ready</td><td>Launch sequence may begin</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Decision log vs open questions" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Decision log &amp; open questions.</h1>
+      <p class="brief">Open Questions: unresolved — blocks signoff. Decision Log: resolved — records decision + date + rationale + who decided. Prevents re-litigation. Format: YYYY-MM-DD · Decision · Rationale · Decided by. Changelog logs every edit to a Signed slide — audit trail for why signoff reset.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Traceability chain" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Traceability chain.</h1>
+      <p class="brief">How a feature threads across specs. Any broken link = gap. Design Spec #15 (Traceability Checklist) audits before signoff.</p>
+      <div class="body">
+<pre>Product Spec     Phase defines scope
+                   ↓
+Design Spec      Feature Inventory (F-IDs)
+                   ↓               ↓                ↓
+                 Use Case      User Flow        Surface
+                                  ↓
+                             Event (from Instrumentation slide)
+                                  ↓
+Tech Spec        Module implements event
+                   ↓
+Product Spec     Metric in Success Metrics slide ← event feeds this</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Inheritance rules" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Inheritance rules.</h1>
+      <p class="brief">If it drifts across products → lives once in Master. If it's what makes the product different → bespoke in the product spec.</p>
+      <div class="body">
+        <table>
+          <tr><th>Thing</th><th>Lives in</th><th>Inherited by</th></tr>
+          <tr><td>Operating Principles</td><td>Master</td><td>Every product (adds bespoke if needed)</td></tr>
+          <tr><td>Shared Services (auth, billing…)</td><td>Master</td><td>Tech Spec references, doesn't re-specify</td></tr>
+          <tr><td>Cross-portfolio privacy stance</td><td>Master</td><td>Tech Spec extends for product-specifics</td></tr>
+          <tr><td>Personas</td><td>Product Spec</td><td>Bespoke per product — NOT inherited</td></tr>
+          <tr><td>Principles (product-specific)</td><td>Product Spec</td><td>Bespoke per product</td></tr>
+          <tr><td>Mental Model</td><td>Product Spec</td><td>Design Spec slide 2 recaps</td></tr>
+          <tr><td>Brand / Voice / Mood</td><td>Brand Spec</td><td>Design Spec inherits microcopy + visual system</td></tr>
+          <tr><td>Microcopy classes</td><td>Brand Spec</td><td>Design Spec Error Taxonomy references</td></tr>
+          <tr><td>Event Taxonomy</td><td>Design Spec</td><td>Tech Spec implements</td></tr>
+          <tr><td>Data Model</td><td>Tech Spec</td><td>Owned, not inherited</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Out of scope for this template" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>What this template does NOT cover.</h1>
+      <p class="brief">Scope kept honest for a small team shipping MVPs. Re-evaluate each at P2+.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Responsive breakpoints</strong> — add at P1.5 when real product exists</li>
+          <li><strong>Motion / transition spec</strong> — polish layer, post-launch</li>
+          <li><strong>Disaster recovery</strong> — MVP-too-early</li>
+          <li><strong>CI/CD + build/deploy detail</strong> — lives in infra, not spec</li>
+          <li><strong>Financing / runway</strong> — not a product doc's job</li>
+          <li><strong>Detailed copy library</strong> — per-product, lives in content tool, linked from Voice slide</li>
+          <li><strong>API reference docs</strong> — generated from code, not hand-specified</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         CLOSE
+         ============================================================ -->
+
+    <section class="slide" data-title="Summary — total surface per product" data-status="open">
+      <span class="tag">Close</span>
+      <h1>Total surface per product.</h1>
+      <p class="brief">80 slides per product sounds heavy — it's not. ~55 of them are single-table, single-diagram, or single-sentence slides reviewed in 2 min. Density is concentrated where it matters for build.</p>
+      <div class="body">
+        <table>
+          <tr><th>Doc</th><th>Slides</th><th>DRI</th><th>Read time</th></tr>
+          <tr><td>Master Sunspell PRD (shared)</td><td>10</td><td>Jasmine</td><td>15 min</td></tr>
+          <tr><td>Product Spec</td><td>16</td><td>Jasmine</td><td>20 min</td></tr>
+          <tr><td>Brand Spec</td><td>14</td><td>Wayeez</td><td>20 min</td></tr>
+          <tr><td>Design Spec</td><td>15</td><td>Wayeez</td><td>30 min</td></tr>
+          <tr><td>Tech Spec</td><td>14</td><td>Michael</td><td>30 min</td></tr>
+          <tr><td>Website Spec (per launch)</td><td>13</td><td>Wayeez</td><td>20 min</td></tr>
+          <tr><td>Roadmap Spec (dynamic weekly)</td><td>8</td><td>Jasmine</td><td>10 min</td></tr>
+          <tr><td><strong>Per-product total</strong></td><td><strong>80</strong></td><td></td><td><strong>130 min</strong></td></tr>
+        </table>
+        <p><strong>Summary-only read load:</strong> 6 min total across all 7 specs, for anyone who just needs to stay synced.<br>
+        <strong>Wayeez load:</strong> 3 of 7 per-product docs (Brand, Design, Website). If team grows, Website Spec is the natural first DRI transfer.<br>
+        <strong>Sundial hook:</strong> Roadmap Spec is the data feed. Sundial aggregates across products → weekly slate → team accepts/declines → tracked in Decision Log.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="The template itself" data-status="open">
+      <span class="tag">Close</span>
+      <h1>Living template.</h1>
+      <p class="brief">Update when: a gap causes a "wait, what about X" during build; a slide consistently goes unfilled across products (candidate to cut); the team adds a fourth person (revisit DRI model).</p>
+      <div class="meta">
+        <span>Owner<strong>Jasmine</strong></span>
+        <span>Review cadence<strong>post-each-MVP retro</strong></span>
+        <span>Version<strong>v1</strong></span>
+      </div>
+      <span class="page"></span>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  /*
+    Slides runtime — same contract as prd-template.html. Adds:
+      · data-group="<label>" on a slide inserts a non-clickable group heading
+        into the index before that slide's row. Used to divide the deck into
+        spec groups (Framing, Master, Product, Brand, Design, Tech, Website,
+        Roadmap, Cross-cutting) without spending slides on divider pages.
+  */
+  (function () {
+    var deck   = document.getElementById('deck');
+    var nav    = document.getElementById('index-nav');
+    var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+    var total  = slides.length;
+    var pad    = function (n) { return (n < 10 ? '0' : '') + n; };
+
+    var isSigned = function (slide) {
+      return (slide.getAttribute('data-status') || '').toLowerCase() === 'signed';
+    };
+
+    // 1. Assign ids, normalize tag, fill page.
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      if (!slide.id) slide.id = 's' + num;
+
+      var tag = slide.querySelector('.tag');
+      if (tag) {
+        var raw = (tag.textContent || '').trim();
+        var label = raw.replace(/^\s*\d+\s*[·\-–—]\s*/, '');
+        tag.innerHTML = '';
+        if (isSigned(slide)) {
+          var dot = document.createElement('span');
+          dot.className = 'status-dot is-signed';
+          tag.appendChild(dot);
+        }
+        var text = document.createElement('span');
+        text.textContent = pad(num) + ' · ' + label;
+        tag.appendChild(text);
+      }
+
+      var page = slide.querySelector('.page');
+      if (page) page.textContent = pad(num) + ' / ' + pad(total);
+    });
+
+    // 2. Build the index.
+    nav.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+
+      // If this slide starts a new group, insert a non-clickable heading first.
+      var group = slide.getAttribute('data-group');
+      if (group && group.trim()) {
+        var h = document.createElement('div');
+        h.className = 'nav-group';
+        h.textContent = group.trim();
+        nav.appendChild(h);
+      }
+
+      var titleAttr = slide.getAttribute('data-title');
+      var h1 = slide.querySelector('h1');
+      var label = (titleAttr && titleAttr.trim())
+        || (h1 ? h1.textContent.trim().replace(/[\.!?]+$/, '') : 'Slide ' + num);
+
+      var a = document.createElement('a');
+      a.href = '#' + slide.id;
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = pad(num);
+      var labelEl = document.createElement('span');
+      labelEl.className = 'label';
+      labelEl.textContent = label;
+      a.appendChild(n);
+      a.appendChild(labelEl);
+      if (isSigned(slide)) {
+        var dot = document.createElement('span');
+        dot.className = 'status-dot is-signed';
+        a.appendChild(dot);
+      } else {
+        a.appendChild(document.createElement('span'));
+      }
+      nav.appendChild(a);
+    });
+
+    // 3. Active state on scroll.
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var byId  = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('is-active'); });
+        var a = byId[e.target.id];
+        if (a) a.classList.add('is-active');
+      });
+    }, { root: null, rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+    slides.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/comments.js" defer></script>
+<link rel="stylesheet" href="../shared/comments-brand.css">
+</body>
+</html>

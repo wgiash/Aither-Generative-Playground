@@ -1,0 +1,916 @@
+<!doctype html>
+<!--
+  Sunpull flows — empty canvas, fork of the wireframe-library pattern.
+  Reuses tokens.css + canvas.css + comments.js unchanged. Add flow sections
+  to the `sections` array in the App component below — the Canvas infra
+  handles pan/zoom/frames; do not modify the infra beyond registering sections.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aither · Sunpull flows</title>
+
+<script src="../shared/firebase-config.js"></script>
+<script src="../shared/auth-gate.js"></script>
+
+<link rel="stylesheet" href="../system/tokens.css">
+<link rel="stylesheet" href="../system/canvas.css">
+<link rel="stylesheet" href="../system/chrome.css">
+
+<style>
+  /* ============================================================
+     Sunpull flow · scoped styles (.spf-*)
+     Every rule uses tokens from tokens.css — no new tokens.
+     Styles apply inside .wf frames where variables like --bg/--fg
+     are already set by data-mode.
+     ============================================================ */
+
+  /* Sunpull web chrome — slim top strip, brand + user avatar */
+  .spf-chrome {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--hair);
+    background: var(--bg);
+  }
+  .spf-chrome .spf-brand {
+    font-size: 15px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.01em;
+  }
+  .spf-chrome .spf-spacer { flex: 1; }
+  .spf-chrome .spf-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: var(--w-title);
+    color: var(--fg);
+  }
+  .spf-chrome .spf-user {
+    font-size: 12px;
+    color: var(--fg-soft);
+    letter-spacing: -0.01em;
+  }
+
+  /* Full-frame canvas for a screen */
+  .spf-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  /* Centered auth/reveal panel */
+  .spf-stage {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 64px;
+  }
+  .spf-card {
+    width: 480px;
+    max-width: 100%;
+    padding: 48px;
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-5);
+  }
+  .spf-card-wide { width: 720px; }
+  .spf-card h1 {
+    font-size: 32px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .spf-card p {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--fg-soft);
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .spf-card .spf-row { display: flex; gap: var(--s-3); }
+  .spf-card .spf-sep {
+    text-align: center;
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    position: relative;
+  }
+  .spf-card .spf-sep::before,
+  .spf-card .spf-sep::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 20px);
+    height: 1px;
+    background: var(--hair);
+  }
+  .spf-card .spf-sep::before { left: 0; }
+  .spf-card .spf-sep::after  { right: 0; }
+
+  /* Source picker row — three equal cards */
+  .spf-source-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    width: 100%;
+    max-width: 1120px;
+  }
+  .spf-source-card {
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-2);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    min-height: 240px;
+  }
+  .spf-source-card .ic {
+    width: 40px; height: 40px;
+    border-radius: var(--r-1);
+    background: var(--input);
+    border: 1px solid var(--hair);
+    display: grid; place-items: center;
+    font-size: 11px;
+    font-weight: var(--w-title);
+    letter-spacing: 0.08em;
+    color: var(--fg-mute);
+  }
+  .spf-source-card h2 {
+    font-size: 16px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .spf-source-card p {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fg-soft);
+    margin: 0;
+  }
+  .spf-source-card[data-state="error"] {
+    border-color: var(--fg-mute);
+    background: var(--input);
+  }
+
+  /* Progress bar */
+  .spf-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--hair);
+    border-radius: var(--r-full);
+    overflow: hidden;
+  }
+  .spf-progress > span {
+    display: block;
+    height: 100%;
+    background: var(--fg);
+    transition: width var(--dur) var(--ease);
+  }
+  .spf-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-soft);
+    letter-spacing: 0;
+  }
+
+  /* Archetype display */
+  .spf-archetype {
+    font-size: 28px;
+    font-weight: var(--w-ui);
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    color: var(--fg);
+    text-wrap: balance;
+    font-style: italic;
+  }
+
+  /* Library shell — left rail + main */
+  .spf-lib {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    flex: 1;
+    min-height: 0;
+  }
+  .spf-lib .rail {
+    border-right: 1px solid var(--hair);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .spf-lib .rail h4 {
+    font-size: 10px;
+    font-weight: var(--w-ui);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-mute);
+    margin: 12px 0 6px;
+  }
+  .spf-lib .rail h4:first-child { margin-top: 0; }
+  .spf-lib .rail a {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--fg-soft);
+    padding: 6px 8px;
+    border-radius: var(--r-1);
+    letter-spacing: -0.005em;
+  }
+  .spf-lib .rail a .n { font-family: var(--font-mono); font-size: 11px; color: var(--fg-mute); }
+  .spf-lib .rail a[aria-current="true"] {
+    background: var(--panel);
+    color: var(--fg);
+    font-weight: var(--w-ui);
+  }
+  .spf-lib .rail a[aria-current="true"] .n { color: var(--fg); }
+  .spf-lib .main { padding: 20px 28px; display: flex; flex-direction: column; gap: var(--s-4); min-height: 0; }
+
+  .spf-searchbar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+  }
+  .spf-search {
+    flex: 1;
+    background: var(--input);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-full);
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--fg-mute);
+  }
+
+  .spf-filters {
+    display: flex;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+  }
+
+  .spf-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 14px 18px;
+    background: var(--input);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-2);
+    font-size: 13px;
+    color: var(--fg-soft);
+    letter-spacing: -0.005em;
+  }
+  .spf-banner strong { color: var(--fg); font-weight: var(--w-ui); }
+  .spf-banner .spf-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--fg-soft);
+    flex: none;
+  }
+
+  /* Masonry grid — purely visual (CSS columns, not real masonry) */
+  .spf-masonry {
+    column-count: 4;
+    column-gap: 16px;
+    flex: 1;
+    min-height: 0;
+  }
+  .spf-masonry .card {
+    break-inside: avoid;
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: var(--r-2);
+    margin-bottom: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .spf-masonry .card .thumb {
+    background: var(--placeholder);
+    color: var(--fg-mute);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: grid; place-items: center;
+    padding: 28px 8px;
+  }
+  .spf-masonry .card .meta {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .spf-masonry .card .meta .src {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-mute);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .spf-masonry .card .meta .t {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--fg);
+    font-weight: var(--w-ui);
+    letter-spacing: -0.005em;
+  }
+  .spf-masonry .card .meta .badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: var(--w-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--hair-2);
+    border-radius: var(--r-full);
+    color: var(--fg-mute);
+  }
+
+  /* Coach-mark bubble (just the pointer, no overlay) */
+  .spf-coach {
+    position: absolute;
+    padding: 10px 14px;
+    background: var(--fg);
+    color: var(--bg);
+    border-radius: var(--r-1);
+    font-size: 11px;
+    letter-spacing: -0.005em;
+    max-width: 200px;
+    line-height: 1.4;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .spf-coach::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 20px;
+    width: 10px; height: 10px;
+    background: var(--fg);
+    transform: rotate(45deg);
+  }
+
+  /* Error microcopy (from §11 / Brand-microcopy-TBD — lifted from Jazz's spec) */
+  .spf-err-note {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+  }
+</style>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ========== Canvas (pan/zoom) — mirrored from system/app.jsx ========== */
+function Canvas({ children, scaleState, panState }) {
+  const viewportRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(null);
+  const [scale, setScale] = scaleState;
+  const [pan, setPan] = panState;
+
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const t = e.target;
+    if (t.closest && t.closest('.topbar')) return;
+    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    setDragging(true);
+  };
+  const onMouseMove = (e) => {
+    if (!dragging || !dragStart.current) return;
+    setPan({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
+  };
+  const onMouseUp = () => { setDragging(false); dragStart.current = null; };
+
+  const onWheel = useCallback((e) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      const rect = viewportRef.current.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setScale(prev => {
+        const next = Math.max(0.08, Math.min(2.5, prev * factor));
+        setPan(p => ({
+          x: cx - ((cx - p.x) * next / prev),
+          y: cy - ((cy - p.y) * next / prev),
+        }));
+        return next;
+      });
+    } else {
+      setPan(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+    }
+  }, [setScale, setPan]);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [onWheel]);
+
+  useEffect(() => {
+    if (!dragging) return;
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [dragging]);
+
+  return (
+    <div
+      ref={viewportRef}
+      className={"canvas-viewport" + (dragging ? " dragging" : "")}
+      onMouseDown={onMouseDown}
+    >
+      <div
+        className="canvas-surface"
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ========== Frame wrapper ========== */
+function Frame({ x, y, w, h, mode, title, subtitle, children }) {
+  return (
+    <div
+      className="wf-frame wf"
+      data-mode={mode}
+      style={{ left: x, top: y, width: w, height: h }}
+    >
+      {children}
+      <div className="wf-frame-label">
+        <span className="n">{title}</span>
+        <span className="s">{subtitle}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Section (labels a group of frames) ========== */
+function Section({ x, y, w, h, num, name, tag, children }) {
+  return (
+    <div className="wf-section" style={{ left: x, top: y, width: w, height: h }}>
+      <div className="wf-section-header">
+        <span className="num">{num}</span>
+        <span className="name">{name}</span>
+        <span className="tag">{tag}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ========== Sunpull first-time user flow (§5.10 FR-O1 → FR-O6) ==========
+   Six web screens. Happy path = Sign-in → Connect → Importing →
+   Archetype → Library. Plus one error state (EC1 LinkedIn format drift).
+   Copy lifted verbatim from Jazz's spec where she provided it. */
+
+function SpfChrome({ user = "JE", email = "jazz@aither.co" }) {
+  return (
+    <div className="spf-chrome">
+      <span className="spf-brand">Sunpull</span>
+      <div className="spf-spacer" />
+      <span className="spf-user">{email}</span>
+      <span className="spf-avatar">{user}</span>
+    </div>
+  );
+}
+
+/* --- Screen 1 · Sign-in (auth path) --- */
+function FTUSignIn() {
+  return (
+    <div className="wf spf-screen">
+      <div className="spf-stage">
+        <div className="spf-card">
+          <div>
+            <div className="wf-kicker">Aither workspace · invite-only</div>
+            <h1 style={{ marginTop: 10 }}>Sign in to Sunpull.</h1>
+          </div>
+          <p>Your memory layer. Every save you've ever wanted to remember, searchable and owned by you.</p>
+          <button className="wf-btn" data-primary="true" style={{ padding: "12px 18px" }}>Continue with Google</button>
+          <div className="spf-sep">or</div>
+          <div className="wf-input"><span style={{ color: "var(--fg-mute)" }}>you@aither.co</span></div>
+          <button className="wf-btn" style={{ padding: "12px 18px" }}>Email me a magic link</button>
+          <p style={{ fontSize: 12, color: "var(--fg-mute)", marginTop: 8 }}>First time? Your Aither workspace is already set up.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Screen 2 · Connect your first source (FR-O1) --- */
+function FTUConnect() {
+  return (
+    <div className="wf spf-screen">
+      <SpfChrome />
+      <div className="spf-stage" style={{ padding: "64px 80px", alignContent: "start" }}>
+        <div style={{ width: "100%", maxWidth: 1120, display: "flex", flexDirection: "column", gap: 40 }}>
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="wf-kicker" style={{ letterSpacing: "0.12em" }}>Step 1 of 3 · Connect a source</div>
+            <h1 style={{ fontSize: 36, fontWeight: "var(--w-title)", letterSpacing: "-0.02em", margin: 0 }}>
+              Let's pull your first saves.
+            </h1>
+            <p style={{ color: "var(--fg-soft)", fontSize: 14, maxWidth: 540, margin: "0 auto" }}>
+              Connect one source to build your library. You can add more anytime. This stays private and in your workspace.
+            </p>
+          </div>
+          <div className="spf-source-grid">
+            <div className="spf-source-card">
+              <div className="ic">IN</div>
+              <h2>LinkedIn</h2>
+              <p>Upload your data export from LinkedIn's Settings → Data Privacy. We'll parse your saves and posts.</p>
+              <button className="wf-btn" data-primary="true">Upload .zip</button>
+            </div>
+            <div className="spf-source-card">
+              <div className="ic">IG</div>
+              <h2>Instagram</h2>
+              <p>Upload your data export from Accounts Center → Download your information → Saved items.</p>
+              <button className="wf-btn" data-primary="true">Upload .zip</button>
+            </div>
+            <div className="spf-source-card">
+              <div className="ic">EX</div>
+              <h2>Browser extension</h2>
+              <p>Install for Chrome or Arc. One click or Cmd+Shift+S to save any page.</p>
+              <button className="wf-btn">Install for Chrome</button>
+            </div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <button className="wf-btn" style={{ fontSize: 11, border: 0, padding: "8px 12px" }}>Skip for now →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Screen 3 · Importing (FR-O2) --- */
+function FTUUploading() {
+  return (
+    <div className="wf spf-screen">
+      <SpfChrome />
+      <div className="spf-stage" style={{ padding: "80px" }}>
+        <div className="spf-card spf-card-wide">
+          <div className="wf-kicker">Step 2 of 3 · Importing</div>
+          <h1>Bringing your saves in…</h1>
+          <p>We're parsing the LinkedIn export and fetching link previews. You can keep this tab open or continue in the background.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+            <div className="spf-progress"><span style={{ width: "34%" }}></span></div>
+            <div className="spf-progress-meta">
+              <span>Importing 847 saves · 34% complete</span>
+              <span>~3 min remaining</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--fg-soft)" }}>
+              <span>LinkedIn · Saved_Posts.csv</span>
+              <span className="spf-err-note">288 / 847 · link previews pending</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--fg-soft)" }}>
+              <span>Instagram</span>
+              <span className="spf-err-note">Not connected</span>
+            </div>
+          </div>
+          <button className="wf-btn" data-primary="true" style={{ marginTop: 8 }}>Continue in background</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Screen 4 · Archetype reveal (FR-O3) --- */
+function FTUArchetype() {
+  return (
+    <div className="wf spf-screen">
+      <SpfChrome />
+      <div className="spf-stage">
+        <div className="spf-card spf-card-wide" style={{ alignItems: "center", textAlign: "center" }}>
+          <div className="wf-kicker">Your archetype · preliminary</div>
+          <p className="spf-archetype" style={{ marginTop: 8 }}>
+            "A sharp curator of operator-toned systems thinking with a soft edge for design-led typography."
+          </p>
+          <p style={{ maxWidth: 480 }}>
+            We'll refine this as your library grows and you confirm cluster proposals. Regenerate anytime from your profile.
+          </p>
+          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+            <button className="wf-btn">Regenerate</button>
+            <button className="wf-btn" data-primary="true">Continue to library</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Screen 5 · Library landing, filtered to untagged (FR-O4) --- */
+function FTULibrary() {
+  const cards = [
+    { src: "LinkedIn", t: "Notes on memory systems — product writing that earns the read.", h: 160, badge: "Untagged" },
+    { src: "Instagram", t: "Campaign visual · warm palette, editorial type.", h: 220, badge: "Untagged" },
+    { src: "Web", t: "Are.na channel · consumer launches 2026", h: 180, badge: "Untagged" },
+    { src: "LinkedIn", t: "Post: how to run weekly reviews in a 3-person team", h: 140, badge: "Untagged" },
+    { src: "Instagram", t: "Studio reference · Mymind home", h: 200, badge: "Untagged" },
+    { src: "Web", t: "Substack · taste as currency, not branding", h: 170, badge: "Untagged" },
+    { src: "LinkedIn", t: "Prospect: Operator-led design shops we'd partner with", h: 150, badge: "Untagged" },
+    { src: "Instagram", t: "Product launch · physical consumer hardware", h: 210, badge: "Untagged" },
+  ];
+  return (
+    <div className="wf spf-screen">
+      <SpfChrome />
+      <div className="spf-lib">
+        <aside className="rail">
+          <h4>Views</h4>
+          <a aria-current="true"><span>Untagged</span><span className="n">847</span></a>
+          <a><span>All saves</span><span className="n">847</span></a>
+          <a><span>Clusters</span><span className="n">—</span></a>
+          <h4>Tags</h4>
+          <a><span>Sales</span><span className="n">0</span></a>
+          <a><span>Partnership</span><span className="n">0</span></a>
+          <a><span>Brand inspo</span><span className="n">0</span></a>
+          <a><span>Marketing</span><span className="n">0</span></a>
+          <a><span>Tool</span><span className="n">0</span></a>
+          <h4>Sources</h4>
+          <a><span>LinkedIn</span><span className="n">847</span></a>
+          <a><span>Instagram</span><span className="n">0</span></a>
+          <a><span>Web</span><span className="n">0</span></a>
+        </aside>
+        <div className="main">
+          <div className="spf-searchbar">
+            <div className="spf-search">Search your library…</div>
+            <button className="wf-btn">Recent</button>
+          </div>
+          <div className="spf-banner">
+            <span className="spf-dot" />
+            <span><strong>Welcome to your library.</strong> These are your first saves — all untagged. Tag them yourself, or let Sunpull ask you in batches via the categorization dialogue.</span>
+            <button className="wf-btn" style={{ marginLeft: "auto" }}>Start categorization</button>
+          </div>
+          <div className="spf-filters">
+            <span className="wf-pill" data-active="true">Untagged</span>
+            <span className="wf-pill">All</span>
+            <span className="wf-pill">LinkedIn</span>
+            <span className="wf-pill">Last 30 days</span>
+          </div>
+          <div className="spf-masonry">
+            {cards.map((c, i) => (
+              <div className="card" key={i}>
+                <div className="thumb" style={{ minHeight: c.h }}>Preview</div>
+                <div className="meta">
+                  <span className="src">{c.src}</span>
+                  <span className="t">{c.t}</span>
+                  <span className="badge">{c.badge}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --- Screen 6 · Error: LinkedIn export format not recognized (EC1 / §13 Tech Risks) --- */
+function FTUError() {
+  return (
+    <div className="wf spf-screen">
+      <SpfChrome />
+      <div className="spf-stage" style={{ padding: "64px 80px", alignContent: "start" }}>
+        <div style={{ width: "100%", maxWidth: 1120, display: "flex", flexDirection: "column", gap: 32 }}>
+          <div style={{ textAlign: "center" }}>
+            <div className="wf-kicker" style={{ letterSpacing: "0.12em" }}>Step 1 of 3 · Connect a source</div>
+            <h1 style={{ fontSize: 36, fontWeight: "var(--w-title)", letterSpacing: "-0.02em", margin: "12px 0 0" }}>
+              Let's pull your first saves.
+            </h1>
+          </div>
+          <div className="spf-banner" style={{ borderColor: "var(--fg-mute)" }}>
+            <span className="spf-dot" />
+            <span>
+              <strong>LinkedIn export format not recognized.</strong> Looks like LinkedIn updated their schema. We've flagged this — for now, the Chrome extension can capture your saves directly.
+            </span>
+          </div>
+          <div className="spf-source-grid">
+            <div className="spf-source-card" data-state="error">
+              <div className="ic">IN</div>
+              <h2>LinkedIn</h2>
+              <p>We couldn't parse this .zip. Header row didn't match any known export version. Michael has been notified.</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="wf-btn">Try another file</button>
+                <button className="wf-btn">Report</button>
+              </div>
+              <span className="spf-err-note">EC1 · Tech §13</span>
+            </div>
+            <div className="spf-source-card">
+              <div className="ic">IG</div>
+              <h2>Instagram</h2>
+              <p>Upload your data export from Accounts Center → Download your information → Saved items.</p>
+              <button className="wf-btn" data-primary="true">Upload .zip</button>
+            </div>
+            <div className="spf-source-card">
+              <div className="ic">EX</div>
+              <h2>Browser extension</h2>
+              <p>Install for Chrome or Arc. One click or Cmd+Shift+S to save any page.</p>
+              <button className="wf-btn" data-primary="true">Install for Chrome</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Intro card (empty-state prompt) ========== */
+function IntroCard({ x, y }) {
+  return (
+    <div className="intro-card" style={{ left: x, top: y }}>
+      <div className="num">Aither · Sunpull · Flows · v0.1</div>
+      <h1>First-time user flow.<br/>One flow in. More to follow.</h1>
+      <p className="body">
+        §5.10 of Jazz's Sunpull reqs — the onboarding ritual from sign-in through
+        archetype reveal to landing on the library filtered to untagged. Six web
+        frames in a row: five happy-path screens plus one error state (LinkedIn
+        export format drift, EC1 / Tech §13). Auth path covered at sign-in.
+      </p>
+      <dl className="rules">
+        <dt>Covered</dt><dd>FR-O1 connect · FR-O2 importing · FR-O3 archetype · FR-O4 library landing · FR-O5 skip allowed · EC1 error</dd>
+        <dt>Frames</dt><dd>Web 1440×900. Dark at y=0; light at y=1060 in paired mode.</dd>
+        <dt>Grid</dt><dd>12-col web · 4-col mobile · 24px gutter · 24px side margin</dd>
+        <dt>Required</dt><dd>Every flow ships with auth path(s) and error/failure states, not just the happy path</dd>
+        <dt>Next flows</dt><dd>Add-from-phone (§5.6) · Bulk import (§5.1–2) · Categorization dialogue (§5.3) · Search (§5.7)</dd>
+        <dt>Navigate</dt><dd>Drag to pan · ⌘/Ctrl + scroll to zoom · scroll to pan · 0 to reset</dd>
+      </dl>
+    </div>
+  );
+}
+
+/* ========== Topbar ========== */
+function Topbar({ mode, setMode, scale, setScale, resetView }) {
+  return (
+    <div className="topbar" style={{ paddingLeft: 120 }}>
+      <a href="../index.html" title="Back to home" aria-label="Back to home"
+         style={{ position: 'fixed', top: 12, left: 12, zIndex: 9999, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', fontFamily: "'Space Mono', ui-monospace, monospace", fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(234,228,226,0.75)', background: 'rgba(18,13,11,0.55)', border: '1px solid rgba(234,228,226,0.18)', borderRadius: 4, textDecoration: 'none', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+         onMouseOver={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,1)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.4)'; }}
+         onMouseOut={(e) => { e.currentTarget.style.color = 'rgba(234,228,226,0.75)'; e.currentTarget.style.borderColor = 'rgba(234,228,226,0.18)'; }}
+      >&larr; Home</a>
+      <div className="topbar-title">
+        <span className="k">Sunpull · Flows · v0.1</span>
+        <span className="t">First-time user flow — 1 of n</span>
+      </div>
+      <div className="topbar-spacer" />
+      <div className="topbar-help">
+        Drag to pan · <kbd>⌘</kbd>+scroll to zoom · <kbd>0</kbd> to reset
+      </div>
+      <div className="mode-toggle" role="group" aria-label="Light / dark master toggle">
+        <button aria-pressed={mode === "dark"}  onClick={() => setMode("dark")}>Dark</button>
+        <button aria-pressed={mode === "light"} onClick={() => setMode("light")}>Light</button>
+        <button aria-pressed={mode === "paired"} onClick={() => setMode("paired")}>Paired</button>
+      </div>
+      <div className="zoom-controls">
+        <button onClick={() => setScale(s => Math.max(0.08, s / 1.15))} aria-label="Zoom out">−</button>
+        <span className="zoom-val">{Math.round(scale * 100)}%</span>
+        <button onClick={() => setScale(s => Math.min(2.5, s * 1.15))} aria-label="Zoom in">+</button>
+        <button onClick={resetView} aria-label="Reset view" title="Reset view">⌂</button>
+      </div>
+    </div>
+  );
+}
+
+/* ========== Main app ========== */
+function App() {
+  const [mode, setMode] = useState("paired");
+  const [scale, setScale] = useState(0.28);
+  const [pan, setPan] = useState({ x: 120, y: 140 });
+
+  useEffect(() => {
+    const saved = localStorage.getItem("aither-sunpull-flows-mode");
+    if (saved) setMode(saved);
+  }, []);
+  useEffect(() => { localStorage.setItem("aither-sunpull-flows-mode", mode); }, [mode]);
+
+  const resetView = () => { setScale(0.28); setPan({ x: 120, y: 140 }); };
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "0") resetView();
+      if (e.key === "1") { setScale(0.28); setPan({ x: 120, y: 140 }); }
+      if (e.key === "2") { setScale(0.5);  setPan({ x: 100, y: 100 }); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /* ====== Sections ======
+     Each entry = one flow. Screens stack horizontally within a section;
+     in paired mode dark sits at y=0, light at y=1060.
+     Standing rule: every flow must include auth + error states.
+  */
+  const FRAME_W = 1440;
+  const FRAME_H = 900;
+  const GAP = 100;
+  const stepX = (i) => i * (FRAME_W + GAP);
+
+  const shouldShow = (variant) => mode === "paired" ? true : variant === mode;
+
+  const sections = [
+    {
+      num: "01",
+      name: "First-time user flow",
+      tag: "Onboarding ritual · §5.10 FR-O1 → O6 · auth + EC1 error",
+      x: 0,
+      screens: [
+        { C: FTUSignIn,    label: "Sign in",       sub: "Auth · invite-only" },
+        { C: FTUConnect,   label: "Connect",       sub: "FR-O1 · source picker" },
+        { C: FTUUploading, label: "Importing",     sub: "FR-O2 · progress" },
+        { C: FTUArchetype, label: "Archetype",     sub: "FR-O3 · reveal" },
+        { C: FTULibrary,   label: "Library",       sub: "FR-O4 · untagged landing" },
+        { C: FTUError,     label: "Error · EC1",   sub: "LinkedIn format drift" },
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <Topbar mode={mode} setMode={setMode} scale={scale} setScale={setScale} resetView={resetView} />
+      <Canvas scaleState={[scale, setScale]} panState={[pan, setPan]}>
+        <IntroCard x={-100} y={-1400} />
+
+        {sections.map((s) => {
+          const items = [];
+          s.screens.forEach((scr, i) => {
+            const x = stepX(i);
+            if (shouldShow("dark")) {
+              items.push({ x, y: 0, w: FRAME_W, h: FRAME_H, mode: "dark",
+                C: scr.C, title: `${i + 1} · ${scr.label}`, sub: `dark · ${scr.sub}` });
+            }
+            if (shouldShow("light")) {
+              items.push({ x, y: shouldShow("dark") ? 1060 : 0, w: FRAME_W, h: FRAME_H, mode: "light",
+                C: scr.C, title: `${i + 1} · ${scr.label}`, sub: `light · ${scr.sub}` });
+            }
+          });
+          const maxX = Math.max(...items.map(it => it.x + it.w), 0);
+          const maxY = Math.max(...items.map(it => it.y + it.h), 0);
+          return (
+            <Section key={s.num} x={s.x} y={0} w={maxX} h={maxY} num={s.num} name={s.name} tag={s.tag}>
+              {items.map((it, j) => {
+                const Comp = it.C;
+                return (
+                  <Frame key={j} x={it.x} y={it.y} w={it.w} h={it.h} mode={it.mode} title={it.title} subtitle={it.sub}>
+                    <Comp />
+                  </Frame>
+                );
+              })}
+            </Section>
+          );
+        })}
+      </Canvas>
+
+      <div className="legend">
+        <div className="row"><span className="dot dot-light" /> Dark · product default</div>
+        <div className="row"><span className="dot dot-dark" /> Light · annotated review</div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+// Stop native Ctrl+wheel zoom from fighting the canvas zoom.
+window.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || e.metaKey) e.preventDefault();
+}, { passive: false, capture: true });
+</script>
+
+<script src="../shared/comments.js" defer></script>
+<link rel="stylesheet" href="../shared/comments-brand.css">
+</body>
+</html>
