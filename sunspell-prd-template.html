@@ -145,7 +145,7 @@
     width: 100%;
     max-width: 1200px;
     margin: 0 auto 48px;
-    aspect-ratio: 16 / 9;
+    min-height: 675px;
     background: var(--canvas-panel);
     border: 1px solid var(--canvas-hair);
     border-radius: var(--r-2);
@@ -155,6 +155,8 @@
     position: relative;
     scroll-margin-top: 32px;
   }
+  /* Slides can grow taller when content demands it; page number stays anchored to bottom. */
+  .slide.slide-tall { min-height: 0; padding-bottom: 72px; }
   .slide .tag {
     font-family: var(--font-ui);
     font-size: 10px;
@@ -255,9 +257,6 @@
     color: rgba(234,228,226,0.78);
     max-width: 78ch;
     margin: 0;
-    overflow: auto;
-    flex: 1;
-    min-height: 0;
   }
   .slide .body h3 {
     font-family: var(--font-ui);
@@ -313,7 +312,7 @@
 
   /* Section-divider slides — larger heading, no brief */
   .slide.section {
-    aspect-ratio: 16 / 9;
+    min-height: 675px;
     padding: 64px 56px;
   }
   .slide.section h1 { font-size: 64px; max-width: 16ch; }
@@ -373,7 +372,7 @@
       border-bottom: 1px solid var(--canvas-hair);
     }
     .deck { margin-left: 0; padding: 24px 20px 64px; }
-    .slide { padding: 28px; aspect-ratio: auto; min-height: 80vh; }
+    .slide { padding: 28px; min-height: auto; }
     .slide h1 { font-size: 30px; }
   }
 </style>
@@ -409,28 +408,47 @@
         <span>Review<strong>post-each-MVP retro</strong></span>
       </div>
       <div class="body">
-        <p>Seven documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that everyone reads; the rest is build fuel.</p>
+        <p>Six documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that everyone reads; the rest is build fuel.</p>
       </div>
       <span class="page"></span>
     </section>
 
-    <section class="slide" data-title="Executive overview" data-status="open">
-      <span class="tag">Overview</span>
+    <section class="slide slide-tall" data-title="Executive overview" data-status="open">
+      <span class="tag">Overview · 5–6 min read</span>
       <h1>Executive overview.</h1>
-      <p class="brief">For anyone encountering a Sunspell product spec. Read this once, then read only the Summary at the top of each spec to stay synced.</p>
+      <p class="brief"><strong>For:</strong> anyone encountering a Sunspell product spec. Read this once, then read only the <strong>Summary</strong> at the top of each spec to stay synced. The rest is DRI deep work — or Claude prompt fuel.</p>
       <div class="body">
         <h3>The problem</h3>
         <p>A 3–4 person team shipping multiple MVPs (Sunpull, Sunrun, Sundial, Sunspoke — plus cult products) can't afford ambiguous docs. Handoffs, meetings, and re-litigation are all expensive. Every person needs to be able to go deep from the spec without blocking anyone else.</p>
         <h3>The system</h3>
-        <p>Seven documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that everyone reads; the rest is build fuel.</p>
+        <p>Six documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that <em>everyone</em> reads; the rest is build fuel.</p>
+<pre>MASTER SUNSPELL PRD      Jasmine · portfolio map          10 slides · 15 min
+   ↓
+PRODUCT SPEC             Jasmine · what &amp; why             16 slides · 20 min
+   ↓
+   ├── BRAND SPEC        Wayeez · identity &amp; voice        14 slides · 20 min
+   │      ↓
+   │      ├── DESIGN SPEC    Wayeez · flows &amp; surfaces    15 slides · 30 min
+   │      └── WEBSITE SPEC   Wayeez · marketing site      13 slides · 20 min
+   ├── TECH SPEC         Michael · architecture           14 slides · 30 min
+   └── ROADMAP SPEC      Jasmine · weekly tasks (Sundial) 8 slides · 10 min
+                         (dynamic — re-versioned weekly)</pre>
         <h3>How you use it</h3>
         <ol>
-          <li>Read all 6 Summary layers (≈6 min total) to stay synced across the team.</li>
-          <li>Read your DRI spec in full to do your work.</li>
-          <li>Drop a signed spec into Claude. It becomes prompt fuel — Wayeez builds UI from signed Design + Brand specs; Michael builds backend from signed Tech Spec.</li>
+          <li><strong>Read all 6 Summary layers</strong> (≈6 min total) to stay synced across the team.</li>
+          <li><strong>Read your DRI spec in full</strong> to do your work.</li>
+          <li><strong>Drop a signed spec into Claude.</strong> It becomes prompt fuel — Wayeez builds UI from signed Design + Brand specs; Michael builds backend from signed Tech Spec.</li>
         </ol>
         <h3>What unlocks what</h3>
         <p>Master → Product → (Brand + Tech in parallel) → (Design + Website in parallel) → build → launch.</p>
+        <h3>What's NOT in scope</h3>
+        <p>Responsive breakpoints, motion, DR, CI/CD, financing, full copy libraries, generated API docs. See bottom of template.</p>
+        <h3>Template discipline</h3>
+        <ul>
+          <li>Template standardizes the <em>questions</em>, not the <em>answers</em>. Each product is bespoke.</li>
+          <li>Framing is short (high level). Spec is exhaustive (build-ready).</li>
+          <li>If it drifts across products → lives once in Master. If it's what makes the product different → bespoke in the product spec.</li>
+        </ul>
       </div>
       <span class="page"></span>
     </section>
@@ -471,7 +489,7 @@
     <section class="slide" data-title="Portfolio structure" data-status="open">
       <span class="tag">Context</span>
       <h1>Portfolio structure.</h1>
-      <p class="brief">How Sunspell's products relate. Every product uses the same 7-spec template. Cult products may mark SUN-specific slides (e.g., Cross-Product Interop) as N/A.</p>
+      <p class="brief">How Sunspell's products relate.</p>
       <div class="body">
 <pre>Sunspell (venture incubator)
    │
@@ -482,32 +500,49 @@
    │     └── Sunspoke  — communication / leadership
    │
    └── Cult products (non-SUN culture-first bets)</pre>
+        <p>Every product uses the same 3-spec template. Cult products may mark SUN-specific slides (e.g., Cross-Product Interop) as N/A.</p>
       </div>
       <span class="page"></span>
     </section>
 
-    <section class="slide" data-title="Document architecture" data-status="open">
+    <section class="slide slide-tall" data-title="Document architecture" data-status="open">
       <span class="tag">Architecture</span>
       <h1>Document architecture.</h1>
-      <p class="brief">Seven specs per product, arranged by dependency. Signing a parent spec unlocks its children. Scope change mid-build → dependent specs pause → propagate up → re-branch.</p>
+      <p class="brief">Per-product spec tree and dependency model.</p>
       <div class="body">
-<pre>MASTER SUNSPELL PRD      Jasmine · portfolio map       10 slides · 15 min
-   ↓
-PRODUCT SPEC             Jasmine · what &amp; why          16 slides · 20 min
-   ↓
-   ├── BRAND SPEC        Wayeez · identity &amp; voice     14 slides · 20 min
-   │      ↓
-   │      ├── DESIGN SPEC   Wayeez · flows &amp; surfaces   15 slides · 30 min
-   │      └── WEBSITE SPEC  Wayeez · marketing site     13 slides · 20 min
-   ├── TECH SPEC         Michael · architecture         14 slides · 30 min
-   └── ROADMAP SPEC      Jasmine · weekly tasks         8 slides · 10 min
-                         (dynamic — re-versioned weekly)</pre>
-        <h3>Per-slide metadata</h3>
+<pre>MASTER SUNSPELL PRD           DRI: Jasmine    Read: 15 min   Locks: quarterly
+   (portfolio map, shared services, operating principles)
+
+Per product:
+   PRODUCT SPEC               DRI: Jasmine    Read: 20 min
+        ↓ (must be signed before Brand/Tech/Roadmap start)
+        ├── BRAND SPEC        DRI: Wayeez     Read: 20 min
+        │        ↓ (must be signed before Design + Website start)
+        │        ├── DESIGN SPEC    DRI: Wayeez     Read: 30 min
+        │        └── WEBSITE SPEC   DRI: Wayeez     Read: 20 min  (re-versioned per launch)
+        ├── TECH SPEC         DRI: Michael    Read: 30 min
+        └── ROADMAP SPEC      DRI: Jasmine    Read: 10 min  (dynamic — weekly updates, Sundial ingests)</pre>
+        <h3>Versioning</h3>
+        <ul>
+          <li>Product Spec v1.0 locks on full signoff. Brand/Design/Tech track to Product version.</li>
+          <li>Brand Spec signed before Design Spec + Website Spec start — copy rules + visual system inform both.</li>
+          <li>Website Spec cycles per launch (P1 site, P2 site); Brand Spec is durable.</li>
+          <li>Roadmap Spec is never "signed" — updated weekly, task-level decisions are the signoff.</li>
+          <li>Scope change mid-build → dependent specs pause → propagate up → re-branch.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Per-slide metadata" data-status="open">
+      <span class="tag">Architecture</span>
+      <h1>Per-slide metadata.</h1>
+      <p class="brief">Every slide, every spec. Any edit resets status to <code>In Review</code>. Changelog appendix logs who / what / when.</p>
+      <div class="body">
 <pre>[Slide N · &lt;Title&gt;]
 Reviewer: Jasmine | Wayeez | Michael
 Status:   Draft → In Review → Signed
 Last edit: YYYY-MM-DD</pre>
-        <p>Any edit resets status to In Review. Changelog appendix logs who / what / when.</p>
       </div>
       <span class="page"></span>
     </section>
@@ -780,7 +815,7 @@ Top 3 opens:
     <section class="slide section" data-title="— Brand Spec" data-section="true" data-status="open">
       <span class="tag">Spec 3 of 7</span>
       <h1>Brand Spec.</h1>
-      <p class="lede">DRI: Wayeez. 14 slides · 20 min. Prereq: Product Spec signed. Gates unlocked on full signoff: Design Spec + Website Spec may begin. Identity &gt; style: positioning and voice first, tokens and swatches late.</p>
+      <p class="lede">DRI: Wayeez. 14 slides · Read: 20 min. Audience: Wayeez + Claude (for copy generation). <strong>Prereq:</strong> Product Spec signed. <strong>Gates unlocked on full signoff:</strong> Design Spec + Website Spec may begin.</p>
       <span class="page"></span>
     </section>
 
@@ -808,8 +843,17 @@ NOT (top 3):
 Falsifiable tests:
   □ Logo-removed recognition
   □ __________________________________________________________________
-  □ __________________________________________________________________</pre>
+  □ __________________________________________________________________
+
+Questions for Jazz (open count): ___     See appendix.</pre>
       </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Why it exists" data-status="open">
+      <span class="tag">Brand · Why it exists</span>
+      <h1>Why the Brand Spec exists.</h1>
+      <p class="brief">A brand spec is not a style guide. It forces decisions about what the product <em>means</em> before specifying what it looks like. Every word, color, and layout is downstream of positioning + archetype + principles. Without this layer, Design Spec flows get built with generic copy that dilutes every SUN product toward the same voice.</p>
       <span class="page"></span>
     </section>
 
@@ -911,6 +955,43 @@ Falsifiable tests:
       <span class="page"></span>
     </section>
 
+    <section class="slide slide-tall" data-title="Brand · Appendix · Questions for Jazz" data-status="open">
+      <span class="tag">Brand · Appendix</span>
+      <h1>Questions for Jazz (canonical format).</h1>
+      <p class="brief">Applies to all Wayeez / Michael specs. Deep-work compatible: DRI logs a blocking question in their own spec rather than pinging Jasmine. Jasmine sweeps all Questions-for-Jazz sections during her weekly review (~15 min) and answers async. Resolved questions move to Decision Log.</p>
+      <div class="body">
+        <table>
+          <tr><th>Q-ID</th><th>Question</th><th>Slide ref</th><th>Asked by</th><th>Date asked</th><th>Blocking?</th><th>Status</th><th>Answer</th></tr>
+          <tr><td>Q-01</td><td>e.g., Should onboarding show archetype name or imagery?</td><td>Design Slide 11</td><td>Wayeez</td><td>2026-04-25</td><td>Yes</td><td>Open</td><td>—</td></tr>
+          <tr><td>Q-02</td><td>e.g., Can we use 3rd-party avatars service vs building?</td><td>Tech Slide 5</td><td>Michael</td><td>2026-04-26</td><td>No</td><td>Answered 2026-04-28</td><td>Use 3rd party for P0, revisit at P1</td></tr>
+        </table>
+        <h3>Columns</h3>
+        <ul>
+          <li><strong>Blocking?</strong> Yes = DRI cannot proceed on this slide/feature until answered. No = nice-to-have clarification.</li>
+          <li><strong>Status:</strong> Open · Answered · Deferred (Jasmine punts to next review)</li>
+          <li><strong>Resolved rows</strong> move to Decision Log on the next edit pass. Keeps the active list short.</li>
+        </ul>
+        <h3>Cadence</h3>
+        <p>Jasmine reviews all four Questions-for-Jazz sections (Brand, Design, Tech, Website) every Monday. Blocking questions answered same-day; non-blocking within the week. If backlog exceeds 10 Open, schedule a 30-min sync.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Principles (meta)" data-status="open">
+      <span class="tag">Brand · Meta</span>
+      <h1>Brand Spec principles (meta).</h1>
+      <p class="brief">Rules about the spec itself — how it earns its keep.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Identity &gt; style.</strong> Center of gravity is positioning and voice, not components. Tokens and swatches come late.</li>
+          <li><strong>Every section has a falsifiable test.</strong> If a claim can't be disproved, it's not usable in review.</li>
+          <li><strong>Absolute rules, not preferences.</strong> "Never X" beats "prefer X."</li>
+          <li><strong>Microcopy is a brand surface.</strong> Every word is a brand decision — rule inherited from LOV.</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
     <!-- ============================================================
          DESIGN SPEC
          ============================================================ -->
@@ -918,7 +999,7 @@ Falsifiable tests:
     <section class="slide section" data-title="— Design Spec" data-section="true" data-status="open">
       <span class="tag">Spec 4 of 7</span>
       <h1>Design Spec.</h1>
-      <p class="lede">DRI: Wayeez. 15 slides · 30 min. Audience: Wayeez + Claude. Prereq: Product Spec + Brand Spec signed. Gates unlocked on full signoff: production UI build can begin.</p>
+      <p class="lede">DRI: Wayeez. 15 slides · Read: 30 min. Audience: Wayeez + Claude. <strong>Prereq:</strong> Product Spec + Brand Spec signed. <strong>Gates unlocked on full signoff:</strong> production build can begin.</p>
       <span class="page"></span>
     </section>
 
@@ -944,7 +1025,9 @@ Traceability checklist:    □ all features → use cases → flows → surfaces
 Top 3 opens:
   1. _________________________________________________________________
   2. _________________________________________________________________
-  3. _________________________________________________________________</pre>
+  3. _________________________________________________________________
+
+Questions for Jazz (open count): ___     See appendix.</pre>
       </div>
       <span class="page"></span>
     </section>
@@ -1061,7 +1144,7 @@ Top 3 opens:
     <section class="slide section" data-title="— Tech Spec" data-section="true" data-status="open">
       <span class="tag">Spec 5 of 7</span>
       <h1>Tech Spec.</h1>
-      <p class="lede">DRI: Michael. 14 slides · 30 min. Prereq: Product Spec signed (Design Spec helpful but not blocking). Gates unlocked on full signoff: production backend build can begin.</p>
+      <p class="lede">DRI: Michael. 15 slides · Read: 30 min. <strong>Prereq:</strong> Product Spec signed (Design Spec helpful but not blocking). <strong>Gates unlocked on full signoff:</strong> production build can begin.</p>
       <span class="page"></span>
     </section>
 
@@ -1078,8 +1161,9 @@ Stack:                    _______________________________________________
 Data store:               _______________________________________________
 Auth:                     _______________________________________________
 
-Reads from other SUNs:    _______________________________________________
-Writes to other SUNs:     _______________________________________________
+Role in portfolio:        Provider | Consumer | Both
+Provides (API surface):   _______________________________________________
+Consumes (APIs I call):   _______________________________________________
 External dependencies:    _______________________________________________
 
 Per-user cost estimate (P1): $_____ /mo
@@ -1090,7 +1174,9 @@ Unified-OS lock-in risks (top 2):
 Top 3 tech opens:
   1. _________________________________________________________________
   2. _________________________________________________________________
-  3. _________________________________________________________________</pre>
+  3. _________________________________________________________________
+
+Questions for Jazz (open count): ___     See appendix.</pre>
       </div>
       <span class="page"></span>
     </section>
@@ -1137,10 +1223,17 @@ Top 3 tech opens:
       <span class="page"></span>
     </section>
 
-    <section class="slide" data-title="Tech · Cross-Product Interop" data-status="open">
+    <section class="slide" data-title="Tech · Cross-Product Interop — Provides" data-status="open">
       <span class="tag">Tech · 7 · Integration</span>
-      <h1>Cross-product interop.</h1>
-      <p class="brief">Reads from / writes to other SUN products. Documented on BOTH sides of the connection.</p>
+      <h1>Cross-product interop — provides.</h1>
+      <p class="brief">APIs / contracts this product <em>exposes</em> for other SUNs. Auth model, rate limits, schema versioning. <strong>Heavy for provider-products</strong> (e.g., Sunpull = memory layer).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cross-Product Interop — Consumes" data-status="open">
+      <span class="tag">Tech · 7b · Integration</span>
+      <h1>Cross-product interop — consumes.</h1>
+      <p class="brief">APIs / contracts this product <em>calls into</em> other SUNs. Which SUN, which contract version, what happens if it's down. <strong>Heavy for consumer-products</strong> (e.g., Sunrun reads Sunpull).</p>
       <span class="page"></span>
     </section>
 
@@ -1200,7 +1293,7 @@ Top 3 tech opens:
     <section class="slide section" data-title="— Website Spec" data-section="true" data-status="open">
       <span class="tag">Spec 6 of 7</span>
       <h1>Website Spec.</h1>
-      <p class="lede">DRI: Wayeez. 13 slides · 20 min. Audience: Wayeez + Claude. Prereq: Product Spec + Brand Spec signed. Re-versioned per launch (P1, P2…). Brand Spec is durable; Website Spec cycles.</p>
+      <p class="lede">DRI: Wayeez. 13 slides · Read: 20 min. Audience: Wayeez + Claude (for site build). <strong>Prereq:</strong> Product Spec + Brand Spec signed. <strong>Gates unlocked on full signoff:</strong> site build + launch sequencing can begin.</p>
       <span class="page"></span>
     </section>
 
@@ -1228,7 +1321,20 @@ Deferred tiers → when:  _______________________________________________
 Top 3 opens:
   1. _________________________________________________________________
   2. _________________________________________________________________
-  3. _________________________________________________________________</pre>
+  3. _________________________________________________________________
+
+Questions for Jazz (open count): ___     See appendix.</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Why it exists" data-status="open">
+      <span class="tag">Website · Why it exists</span>
+      <h1>Why the Website Spec exists.</h1>
+      <p class="brief">The public-facing marketing site is as critical as the app for a subscribable MVP. Visitors form their opinion in 10 seconds — positioning, promise, proof. Without a spec, the site becomes generic SaaS template and the Brand Spec's work gets diluted on the very first touchpoint.</p>
+      <div class="body">
+        <h3>Lifecycle note</h3>
+        <p>Website Spec is re-versioned per launch (P1 launch, P2 launch). Brand Spec is durable; Website Spec cycles.</p>
       </div>
       <span class="page"></span>
     </section>
@@ -1340,7 +1446,121 @@ Top 3 opens:
     <section class="slide section" data-title="— Roadmap Spec" data-section="true" data-status="open">
       <span class="tag">Spec 7 of 7</span>
       <h1>Roadmap Spec.</h1>
-      <p class="lede">DRI: Jasmine. 8 slides · 10 min. Prereq: Product Spec signed. Dynamic — updated weekly. No one-time "signoff"; per-task decisions (Proposed → Accepted / Declined). Sundial ingests every product's Roadmap Spec and suggests weekly priorities across projects.</p>
+      <p class="lede">DRI: Jasmine. 8 slides · 10 min. Prereq: Product Spec signed. Dynamic — updated weekly. No one-time "signoff"; per-task decisions (Proposed → Accepted / Declined). <strong>Sundial generates tasks</strong> by reading every product's specs and surfacing the weekly slate; the team takes what they can and pushes the rest out.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · Why it exists" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>Why the Roadmap Spec exists.</h1>
+      <p class="brief">The PRDs tell you <em>what</em> to build. The Roadmap Spec is where Sundial <strong>generates</strong> the work — reading every product's Product / Brand / Design / Tech / Website specs and deriving the tasks needed to close gaps, ship phases, and unblock the team.</p>
+      <div class="body">
+        <h3>Task Inventory is Sundial's <em>output</em>, not human input</h3>
+        <p>Humans don't pre-populate the backlog. Sundial derives it continuously from the other specs, keeps it current, and surfaces the subset that fits this week. Sundial proposes a weekly slate; the team takes what they can and pushes the rest out (deferred, not dropped). This is how a 3–4 person team running 4+ products stays coordinated without standups.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · How Sundial generates tasks" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>How Sundial generates tasks (derivation rules).</h1>
+      <p class="brief">Sundial watches every spec and produces tasks from these signals. It re-derives on every spec edit. Old tasks don't stale — they either stay current, get marked <code>Done</code>, or get flagged obsolete if the underlying spec changed.</p>
+      <div class="body">
+        <table>
+          <tr><th>Source spec</th><th>Signal → task type</th></tr>
+          <tr><td>Product Spec</td><td>Unfilled Summary fields → <strong>Concept/Requirement</strong> (Jazz). Open Questions → <strong>Decision</strong> (Jazz). Kill-criteria trigger → <strong>Decision</strong> (Jazz).</td></tr>
+          <tr><td>Brand Spec</td><td>Empty blanks in microcopy / house phrases → <strong>Design</strong> (Wayeez). Unresolved Falsifiable Test → <strong>Review</strong> (Jazz).</td></tr>
+          <tr><td>Design Spec</td><td>Feature Inventory row not <code>Done</code> → <strong>Build-UI</strong> (Wayeez). Missing state in a flow → <strong>Design</strong> (Wayeez). Missing event in Instrumentation → <strong>Design + Build-Tech</strong> (Wayeez + Michael).</td></tr>
+          <tr><td>Tech Spec</td><td>Architecture component not shipped → <strong>Build-Tech</strong> (Michael). Missing Provides/Consumes doc → <strong>Build-Tech</strong> (Michael).</td></tr>
+          <tr><td>Website Spec</td><td>Unfilled content block → <strong>Design</strong> (Wayeez). Asset tier not decided → <strong>Decision</strong> (Jazz).</td></tr>
+          <tr><td>Any spec</td><td><code>Status: In Review</code> → <strong>Review</strong> (Jazz). Question in Questions-for-Jazz → <strong>Review</strong> (Jazz).</td></tr>
+          <tr><td>Master PRD</td><td>Quarterly re-lock approaching → <strong>Requirement</strong> (Jazz).</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Push-out mechanics" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>Push-out mechanics.</h1>
+      <p class="brief">Declined tasks don't disappear. When the team declines or defers a task, Sundial re-surfaces it next eligible week with a <code>↪ deferred from W__</code> tag. The slate is always a <em>proposal</em>, never an assignment. Jazz's only hard constraint is capacity (don't over-commit the team).</p>
+      <div class="body">
+        <ol>
+          <li>Marks it <code>Deferred to W__</code> in the Task Inventory</li>
+          <li>Re-surfaces it next eligible week with a <code>↪ deferred from W__</code> tag</li>
+          <li>Tracks defer-count per task</li>
+          <li><strong>If deferred 3+ times</strong>, flags it to Jazz: <em>"T-__ has been pushed 3 weeks. Rescope, reassign, or drop?"</em> — forces a decision rather than silent backlog accumulation.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · Bootstrap mode" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>Bootstrap mode (pre-Sundial).</h1>
+      <p class="brief">Sundial doesn't exist yet — it's being built. Until Sundial is live, the Roadmap Spec runs in <strong>manual mode</strong>. The Roadmap Spec structure (Task Inventory · Weekly Recommendations · Decision Log) is identical in both modes — Sundial replaces Jasmine's manual pass once live. No migration when Sundial ships.</p>
+      <div class="body">
+        <table>
+          <tr><th>Concern</th><th>Bootstrap mode</th><th>Sundial-live mode</th></tr>
+          <tr><td>Weekly slate</td><td>Jasmine hand-drafts Sunday night</td><td>Sundial proposes automatically</td></tr>
+          <tr><td>Effort calibration</td><td>Team logs actuals in Retro slide; Jasmine tunes estimates</td><td>Sundial learns from Decision Log + actuals</td></tr>
+          <tr><td>Cross-product dependency surfacing</td><td>Jasmine reads all product Roadmap Specs manually</td><td>Sundial aggregates across products</td></tr>
+          <tr><td>Decision tracking</td><td>Manually logged in Decision Log</td><td>Sundial writes on accept/decline</td></tr>
+        </table>
+        <p>Sundial's own Roadmap Spec is itself written in bootstrap mode — classic chicken-and-egg, resolved by Jasmine playing Sundial's role until Sundial can play its own.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · Sundial Actions" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>Sundial Actions — DMs Jazz directly.</h1>
+      <p class="brief">Sundial is not a passive dashboard. It's an active agent that messages Jasmine (and the DRIs) on a defined schedule + triggers. DMs replace standups. Every DM leads with the decision requested, not the context.</p>
+      <div class="body">
+        <table>
+          <tr><th>#</th><th>Trigger</th><th>Message</th><th>Cadence</th></tr>
+          <tr><td>A-01</td><td>Monday 8am</td><td><strong>Generates fresh tasks from all specs</strong>, proposes weekly slate across all products. Each task: derivation source + rationale + Accept/Decline/Defer.</td><td>Weekly</td></tr>
+          <tr><td>A-01b</td><td>Any spec edit</td><td>Re-derives Task Inventory. If new critical-path task appears, DMs Jazz with heads-up — doesn't wait for Monday.</td><td>Event</td></tr>
+          <tr><td>A-01c</td><td>Defer count ≥ 3</td><td>Flag task: "Pushed 3 weeks — rescope, reassign, or drop?"</td><td>Threshold</td></tr>
+          <tr><td>A-02</td><td>Task blocked</td><td>Name the task, the blocker, suggested unblock (swap a task / ping a DRI / defer).</td><td>Event</td></tr>
+          <tr><td>A-03</td><td>Questions-for-Jazz ≥ 5 open</td><td>Nudge with list of blocking questions ranked by urgency.</td><td>Threshold</td></tr>
+          <tr><td>A-04</td><td>Friday 5pm</td><td>End-of-week digest: shipped / didn't + why / carry-forward / next week preview.</td><td>Weekly</td></tr>
+          <tr><td>A-05</td><td>Cross-product conflict</td><td>Two products need same person / resource same week — propose resolution.</td><td>Event</td></tr>
+          <tr><td>A-06</td><td>Capacity drift</td><td>DRI is over-booked (&gt;120%) or under-booked (&lt;60%) — flag with recs.</td><td>Weekly, if detected</td></tr>
+          <tr><td>A-07</td><td>Launch-date risk</td><td>Remaining effort vs remaining weeks indicates slip — flag delta.</td><td>Weekly, if detected</td></tr>
+          <tr><td>A-08</td><td>Kill-criteria hit</td><td>Product Spec kill criteria breached — surface for decision.</td><td>Event</td></tr>
+        </table>
+        <h3>Reply protocol</h3>
+        <p>Jasmine replies in-message: <code>accept</code>, <code>decline</code>, <code>defer to W__</code>, or free-text. Sundial parses reply, updates Decision Log, surfaces learning for future proposals.</p>
+        <h3>Message format principle</h3>
+        <p>Every Sundial DM leads with the decision requested, not the context. Jazz can skim and reply without opening the full Roadmap Spec. Context is a link away.</p>
+        <h3>Other DRIs</h3>
+        <p>Sundial can DM Wayeez / Michael directly too — but only for their own work (e.g., "Your slate for the week"). Jazz is the only recipient of portfolio-level messages (cross-product conflicts, kill-criteria alerts, launch risk).</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · Sundial DM example" data-status="open">
+      <span class="tag">Roadmap · Meta</span>
+      <h1>Example — Sundial Monday slate DM (A-01).</h1>
+      <p class="brief">Decision-first format: Jazz skims and replies without opening the full Roadmap Spec.</p>
+      <div class="body">
+<pre>Morning Jazz — proposed slate for week of 2026-W17:
+
+  For Wayeez (4d capacity):
+    → T-01  Build Save ingestion · 2d · P0 critical path       [accept/defer]
+    → T-03  Onboarding flow states · 2d · depends on T-01      [accept/defer]
+
+  For Michael (3d capacity):
+    → T-02  Wire Sunpull API auth · 0.5d · unblocks both       [accept/defer]
+    → T-04  Cost guardrails on LLM · 2d · P1 prep              [accept/defer]
+
+  Flags:
+    ⚠ T-09 (Sunrun) needs T-02 landed by Wed or slips a week
+    ⚠ Brand Spec Q-03 still Open — blocks T-03
+
+  Reply with decisions or "talk" to schedule a sync.</pre>
+      </div>
       <span class="page"></span>
     </section>
 
@@ -1378,19 +1598,48 @@ Top 3 cross-product deps:
       <span class="page"></span>
     </section>
 
-    <section class="slide" data-title="Roadmap · Task Inventory" data-status="open">
+    <section class="slide slide-tall" data-title="Roadmap · Task Inventory" data-status="open">
       <span class="tag">Roadmap · 2 · Structure</span>
       <h1>Task inventory.</h1>
-      <p class="brief">Canonical table — Sundial's primary input. Every task gets a row. Sundial parses this across all product Roadmaps to generate weekly slates.</p>
+      <p class="brief">Canonical table — Sundial's primary output. Every task in the product's backlog gets a row. Sundial parses this across all product Roadmap Specs to generate weekly slates.</p>
       <div class="body">
         <table>
-          <tr><th>T-ID</th><th>Title</th><th>Phase</th><th>DRI</th><th>Effort</th><th>Depends on</th><th>Week</th><th>Status</th></tr>
-          <tr><td>T-01</td><td>Build Save ingestion from Chrome ext</td><td>P0</td><td>Wayeez</td><td>M</td><td>—</td><td>W1</td><td>Proposed</td></tr>
-          <tr><td>T-02</td><td>Wire Sunpull API auth</td><td>P0</td><td>Michael</td><td>S</td><td>—</td><td>W1</td><td>Accepted</td></tr>
-          <tr><td>T-03</td><td>Onboarding flow states</td><td>P0</td><td>Wayeez</td><td>M</td><td>T-01</td><td>W2</td><td>Proposed</td></tr>
-          <tr><td>T-04</td><td>Cost guardrails on LLM calls</td><td>P1</td><td>Michael</td><td>L</td><td>T-02</td><td>W3</td><td>Proposed</td></tr>
+          <tr><th>T-ID</th><th>Title</th><th>Type</th><th>Phase</th><th>DRI</th><th>Effort</th><th>Depends</th><th>Week</th><th>Status</th></tr>
+          <tr><td>T-01</td><td>Build Save ingestion from Chrome ext</td><td>Build-UI</td><td>P0</td><td>Wayeez</td><td>M</td><td>—</td><td>W1</td><td>Proposed</td></tr>
+          <tr><td>T-02</td><td>Wire Sunpull API auth</td><td>Build-Tech</td><td>P0</td><td>Michael</td><td>S</td><td>—</td><td>W1</td><td>Accepted</td></tr>
+          <tr><td>T-03</td><td>Onboarding flow states</td><td>Design</td><td>P0</td><td>Wayeez</td><td>M</td><td>T-01</td><td>W2</td><td>Proposed</td></tr>
+          <tr><td>T-04</td><td>Cost guardrails on LLM calls</td><td>Build-Tech</td><td>P1</td><td>Michael</td><td>L</td><td>T-02</td><td>W3</td><td>Proposed</td></tr>
+          <tr><td>T-05</td><td>Review Design Spec Slides 4–7</td><td>Review</td><td>P0</td><td>Jazz</td><td>S</td><td>—</td><td>W2</td><td>Proposed</td></tr>
+          <tr><td>T-06</td><td>Decide pricing model</td><td>Concept</td><td>P0</td><td>Jazz</td><td>S</td><td>—</td><td>W1</td><td>Proposed</td></tr>
+          <tr><td>T-07</td><td>Answer blocking questions in Brand/Design specs</td><td>Review</td><td>P0</td><td>Jazz</td><td>S</td><td>—</td><td>Weekly</td><td>Recurring</td></tr>
         </table>
         <p><strong>Effort:</strong> S (≤½ day) · M (1–2 days) · L (3–5 days) · XL (split). <strong>Status:</strong> Proposed · Accepted · Declined · In Progress · Blocked · Done · Deferred.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide slide-tall" data-title="Roadmap · Task Type allocation" data-status="open">
+      <span class="tag">Roadmap · 2b · Structure</span>
+      <h1>Task Type — allocation rule.</h1>
+      <p class="brief">Task types map to DRIs deterministically. Sundial never proposes a task to a DRI outside their allowed types.</p>
+      <div class="body">
+        <table>
+          <tr><th>Type</th><th>Description</th><th>DRI (default)</th></tr>
+          <tr><td><strong>Concept</strong></td><td>Product thinking · strategy · positioning · pricing decisions</td><td>Jazz</td></tr>
+          <tr><td><strong>Requirement</strong></td><td>Writing / editing Product Spec · Master PRD updates · phase scoping</td><td>Jazz</td></tr>
+          <tr><td><strong>Review</strong></td><td>Signing off specs · answering Questions-for-Jazz · reviewing slates</td><td>Jazz</td></tr>
+          <tr><td><strong>Decision</strong></td><td>Resolving Open Questions · kill-criteria calls · launch go/no-go</td><td>Jazz</td></tr>
+          <tr><td><strong>Design</strong></td><td>Brand · Design · Website Spec authoring + wireframing</td><td>Wayeez</td></tr>
+          <tr><td><strong>Build-UI</strong></td><td>Implementation of flows, surfaces, components (Claude-assisted)</td><td>Wayeez</td></tr>
+          <tr><td><strong>Build-Tech</strong></td><td>Backend · data model · APIs · integrations · infra</td><td>Michael</td></tr>
+          <tr><td><strong>QA</strong></td><td>Pre-launch testing</td><td>Whichever DRI owns the thing being tested</td></tr>
+        </table>
+        <h3>Rules</h3>
+        <ul>
+          <li><strong>Jazz never gets Design or Build tasks.</strong> If a task looks like it needs to land on Jazz but is Design or Build type, it's misclassified — usually it's a <em>Concept</em> or <em>Requirement</em> that unblocks the build. Sundial flags misclassifications.</li>
+          <li><strong>Jazz's weekly load is capped at high-leverage types only.</strong> Concept · Requirement · Review · Decision. Budget: ≤1 day/week on Review (sweep across Questions-for-Jazz + slide signoffs), rest on Concept/Requirement/Decision.</li>
+          <li><strong>Recurring Jazz task.</strong> "Answer blocking questions + review open slides" is a standing weekly task — surfaced every Monday. Baseline, not one-and-done.</li>
+        </ul>
       </div>
       <span class="page"></span>
     </section>
@@ -1500,10 +1749,24 @@ For Michael (capacity: 3 days this week):
       <span class="page"></span>
     </section>
 
-    <section class="slide" data-title="Decision log vs open questions" data-status="open">
+    <section class="slide" data-title="Decision Log (per spec)" data-status="open">
       <span class="tag">Mechanics</span>
-      <h1>Decision log &amp; open questions.</h1>
-      <p class="brief">Open Questions: unresolved — blocks signoff. Decision Log: resolved — records decision + date + rationale + who decided. Prevents re-litigation. Format: YYYY-MM-DD · Decision · Rationale · Decided by. Changelog logs every edit to a Signed slide — audit trail for why signoff reset.</p>
+      <h1>Decision Log (per spec).</h1>
+      <p class="brief">Different from Open Questions.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Open Questions:</strong> unresolved. Blocks signoff.</li>
+          <li><strong>Decision Log:</strong> resolved. Records the decision + date + rationale + who decided. Prevents re-litigation.</li>
+        </ul>
+        <p>Format: <code>YYYY-MM-DD · Decision · Rationale · Decided by</code></p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Changelog (per spec)" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Changelog (per spec).</h1>
+      <p class="brief">Every edit to a Signed slide logs: date · slide # · what changed · by whom. Changelog is the audit trail for why signoff reset.</p>
       <span class="page"></span>
     </section>
 
@@ -1571,10 +1834,10 @@ Product Spec     Metric in Success Metrics slide ← event feeds this</pre>
          CLOSE
          ============================================================ -->
 
-    <section class="slide" data-title="Summary — total surface per product" data-status="open">
+    <section class="slide slide-tall" data-title="Summary — total surface per product" data-status="open">
       <span class="tag">Close</span>
       <h1>Total surface per product.</h1>
-      <p class="brief">80 slides per product sounds heavy — it's not. ~55 of them are single-table, single-diagram, or single-sentence slides reviewed in 2 min. Density is concentrated where it matters for build.</p>
+      <p class="brief">81 slides per product sounds heavy — it's not. ~55 of them are single-table, single-diagram, or single-sentence slides reviewed in 2 min. Density is concentrated where it matters for build.</p>
       <div class="body">
         <table>
           <tr><th>Doc</th><th>Slides</th><th>DRI</th><th>Read time</th></tr>
@@ -1582,10 +1845,10 @@ Product Spec     Metric in Success Metrics slide ← event feeds this</pre>
           <tr><td>Product Spec</td><td>16</td><td>Jasmine</td><td>20 min</td></tr>
           <tr><td>Brand Spec</td><td>14</td><td>Wayeez</td><td>20 min</td></tr>
           <tr><td>Design Spec</td><td>15</td><td>Wayeez</td><td>30 min</td></tr>
-          <tr><td>Tech Spec</td><td>14</td><td>Michael</td><td>30 min</td></tr>
+          <tr><td>Tech Spec</td><td>15</td><td>Michael</td><td>30 min</td></tr>
           <tr><td>Website Spec (per launch)</td><td>13</td><td>Wayeez</td><td>20 min</td></tr>
           <tr><td>Roadmap Spec (dynamic weekly)</td><td>8</td><td>Jasmine</td><td>10 min</td></tr>
-          <tr><td><strong>Per-product total</strong></td><td><strong>80</strong></td><td></td><td><strong>130 min</strong></td></tr>
+          <tr><td><strong>Per-product total</strong></td><td><strong>81</strong></td><td></td><td><strong>130 min</strong></td></tr>
         </table>
         <p><strong>Summary-only read load:</strong> 6 min total across all 7 specs, for anyone who just needs to stay synced.<br>
         <strong>Wayeez load:</strong> 3 of 7 per-product docs (Brand, Design, Website). If team grows, Website Spec is the natural first DRI transfer.<br>
@@ -1596,12 +1859,18 @@ Product Spec     Metric in Success Metrics slide ← event feeds this</pre>
 
     <section class="slide" data-title="The template itself" data-status="open">
       <span class="tag">Close</span>
-      <h1>Living template.</h1>
-      <p class="brief">Update when: a gap causes a "wait, what about X" during build; a slide consistently goes unfilled across products (candidate to cut); the team adds a fourth person (revisit DRI model).</p>
+      <h1>The template itself.</h1>
+      <p class="brief">This doc is a living template. Update when:</p>
+      <div class="body">
+        <ul>
+          <li>A gap causes a "wait, what about X" during build</li>
+          <li>A slide consistently goes unfilled across products (candidate to cut)</li>
+          <li>The team adds a fourth person (revisit DRI model)</li>
+        </ul>
+      </div>
       <div class="meta">
-        <span>Owner<strong>Jasmine</strong></span>
-        <span>Review cadence<strong>post-each-MVP retro</strong></span>
-        <span>Version<strong>v1</strong></span>
+        <span>Template owner<strong>Jasmine</strong></span>
+        <span>Review cadence<strong>post-each-MVP-launch retro</strong></span>
       </div>
       <span class="page"></span>
     </section>
