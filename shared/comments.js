@@ -105,24 +105,17 @@
     setTimeout(() => e.remove(), 8000);
   };
 
-  const loadScript = src => {
-    // De-dupe: auth-gate may have already loaded firebase-app-compat.
-    const existing = document.querySelector('script[src="' + src + '"]');
-    if (existing) {
-      if (existing.dataset.loaded === '1') return Promise.resolve();
-      return new Promise((res, rej) => {
-        existing.addEventListener('load', res);
-        existing.addEventListener('error', rej);
-      });
-    }
-    return new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = () => { s.dataset.loaded = '1'; res(); };
-      s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  };
+  const loadScript = src => new Promise((res, rej) => {
+    // We used to dedupe against existing <script src> tags, but if a prior
+    // loader (e.g. auth-gate) already finished loading the script, its load
+    // event fired before we subscribed — and we'd hang here forever. The
+    // browser caches the request; a plain append is cheap and correct.
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
 
   // Warm the TLS handshake to Firestore's CDN while the SDK loads.
   (function preconnect() {
@@ -585,35 +578,34 @@
   const waitForContainer = () => new Promise(resolve => {
     if (isDeck || getCanvasSurface()) return resolve();
     // .canvas-surface is only created at runtime by the React app mounted
-    // into #root (wireframe-library). Pages without that root — e.g.
-    // prd-template, which pins to document.body — should boot immediately
-    // instead of waiting out the safety timeout.
-    if (!document.getElementById('root')) return resolve();
+    // into #root (wireframe-library / flows canvas). Pages without that
+    // root — e.g. prd-template — should boot immediately against body.
+    const root = document.getElementById('root');
+    if (!root) return resolve();
+    // React-mounted pages that AREN'T canvases (e.g. the prototype) will
+    // fill #root with their own UI but never create .canvas-surface. As
+    // soon as #root has any children, resolve against whatever container
+    // getContext() finds now (falls back to document.body).
+    if (root.firstElementChild) return resolve();
     const mo = new MutationObserver(() => {
-      if (getCanvasSurface()) { mo.disconnect(); resolve(); }
+      if (getCanvasSurface()) { mo.disconnect(); resolve(); return; }
+      if (root.firstElementChild) { mo.disconnect(); resolve(); return; }
     });
     mo.observe(document.body, { childList: true, subtree: true });
-    // Safety timeout so slide-only or other pages still boot
-    setTimeout(() => { mo.disconnect(); resolve(); }, 8000);
+    // Safety timeout — shorter now that the non-canvas case resolves on
+    // its own via the observer above.
+    setTimeout(() => { mo.disconnect(); resolve(); }, 4000);
   });
 
   (async () => {
     const ok = await initFirebase();
     if (!ok) return;
-    // Kick off the Firestore subscription immediately — don't block on the
-    // canvas container mounting. Pins render once the container resolves.
+    // Must wait for the container (canvas-surface on canvas pages) before
+    // subscribing — pin x/y are in that container's coord space. Subscribing
+    // early would render pins into document.body at wrong positions.
+    await waitForContainer();
+    observeCanvasSurface();
     currentContext = getContext();
     subscribe();
-    await waitForContainer();
-    // Re-resolve context (canvas-surface may now exist) and re-render pins
-    // against the real container.
-    const next = getContext();
-    if (next.id !== currentContext.id || next.container !== currentContext.container) {
-      currentContext = next;
-      subscribe();
-    } else {
-      currentContext = next;
-    }
-    observeCanvasSurface();
   })();
 })();

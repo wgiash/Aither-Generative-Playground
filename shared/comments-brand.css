@@ -56,7 +56,11 @@
 /* ---------- Pins (warm + bone, keep the Figma tear-drop shape) ---------- */
 /* Do not override `transform` — comments.js manages pin positioning. */
 /* Default pin = others', read (muted). .unread = others' with new activity.
-   .mine = my own pin; never carries the unread state. */
+   .mine = my own pin; never carries the unread state.
+   NOTE: do NOT override `position` here — comments.js sets the pin to
+   position:absolute in the injected base CSS and relies on it for left/top
+   placement against the canvas surface. Absolute positioning also creates
+   the containing block for the child <img>, so we don't need `relative`. */
 .cm-pin {
   background: var(--warm-secondary);
   color: var(--bone);
@@ -68,7 +72,6 @@
   letter-spacing: 0;
   box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   overflow: hidden;
-  position: relative;
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .cm-pin.unread {
