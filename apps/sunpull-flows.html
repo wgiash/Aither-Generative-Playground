@@ -1528,19 +1528,19 @@ function IntroCard({ x, y }) {
   return (
     <div className="intro-card" style={{ left: x, top: y }}>
       <div className="num">Aither · Sunpull · Flows · v0.1</div>
-      <h1>First-time user flow.<br/>One flow in. More to follow.</h1>
+      <h1>Three flows in.<br/>Onboarding, phone, extension.</h1>
       <p className="body">
-        §5.10 of Jazz's Sunpull reqs — the onboarding ritual from sign-in through
-        archetype reveal to landing on the library filtered to untagged. Six web
-        frames in a row: five happy-path screens plus one error state (LinkedIn
-        export format drift, EC1 / Tech §13). Auth path covered at sign-in.
+        Each flow carries happy-path plus auth and error states per the standing rule.
+        Drawn directly from Jazz's Sunpull reqs — FR codes are labelled on every
+        screen. Mobile frames (390×844) sit alongside desktop (1440×900) on the
+        same plane; pan right to see flows 02 and 03.
       </p>
       <dl className="rules">
-        <dt>Covered</dt><dd>FR-O1 connect · FR-O2 importing · FR-O3 archetype · FR-O4 library landing · FR-O5 skip allowed · EC1 error</dd>
-        <dt>Frames</dt><dd>Web 1440×900 · light-mode only</dd>
-        <dt>Grid</dt><dd>12-col web · 4-col mobile · 24px gutter · 24px side margin</dd>
-        <dt>Required</dt><dd>Every flow ships with auth path(s) and error/failure states, not just the happy path</dd>
-        <dt>Next flows</dt><dd>Add-from-phone (§5.6) · Bulk import (§5.1–2) · Categorization dialogue (§5.3) · Search (§5.7)</dd>
+        <dt>Flow 01</dt><dd>First-time user · §5.10 · sign-in → connect → import → archetype → library · + EC1 error</dd>
+        <dt>Flow 02</dt><dd>Add from phone · §5.6 · pair → send → suggest → retag · + EC5 error (mobile)</dd>
+        <dt>Flow 03</dt><dd>Browser extension · §5.5 · auth → trigger → suggested → saved · + EC4 error</dd>
+        <dt>Light-only</dt><dd>All frames render in light mode. Dark not shipped in v0.1.</dd>
+        <dt>Next candidates</dt><dd>Categorization dialogue (§5.3) · Search + clusters (§5.7) · Source detail (§5.8) · Tag management (§5.4) · Bulk import detail (§5.1–2)</dd>
         <dt>Navigate</dt><dd>Drag to pan · ⌘/Ctrl + scroll to zoom · scroll to pan · 0 to reset</dd>
       </dl>
     </div>
@@ -1558,7 +1558,7 @@ function Topbar({ scale, setScale, resetView }) {
       >&larr; Home</a>
       <div className="topbar-title">
         <span className="k">Sunpull · Flows · v0.1</span>
-        <span className="t">First-time user flow — 1 of n</span>
+        <span className="t">3 flows · first-time · add-from-phone · browser extension</span>
       </div>
       <div className="topbar-spacer" />
       <div className="topbar-help">
@@ -1593,19 +1593,16 @@ function App() {
 
   /* ====== Sections ======
      Each entry = one flow. Screens stack horizontally within a section.
+     Per-flow frameW/frameH/gap lets mobile + desktop flows coexist cleanly.
      Light-mode only. Standing rule: every flow must include auth + error states.
   */
-  const FRAME_W = 1440;
-  const FRAME_H = 900;
-  const GAP = 100;
-  const stepX = (i) => i * (FRAME_W + GAP);
-
   const sections = [
     {
       num: "01",
       name: "First-time user flow",
       tag: "Onboarding ritual · §5.10 FR-O1 → O6 · auth + EC1 error",
       x: 0,
+      frameW: 1440, frameH: 900, gap: 100,
       screens: [
         { C: FTUSignIn,    label: "Sign in",       sub: "Auth · invite-only" },
         { C: FTUConnect,   label: "Connect",       sub: "FR-O1 · source picker" },
@@ -1613,6 +1610,34 @@ function App() {
         { C: FTUArchetype, label: "Archetype",     sub: "FR-O3 · reveal" },
         { C: FTULibrary,   label: "Library",       sub: "FR-O4 · untagged landing" },
         { C: FTUError,     label: "Error · EC1",   sub: "LinkedIn format drift" },
+      ],
+    },
+    {
+      num: "02",
+      name: "Add from phone",
+      tag: "Text forwarding · §5.6 FR-X1 → X5 · auth pairing + EC5 error",
+      x: 12000,
+      frameW: 390, frameH: 844, gap: 60,
+      screens: [
+        { C: APPair,           label: "Pair phone",     sub: "Auth · first run" },
+        { C: APConvSend,       label: "Send link",      sub: "FR-X1 · link + context" },
+        { C: APConvSuggestion, label: "Tag suggestion", sub: "FR-X3 · preview + tag" },
+        { C: APConvConfirm,    label: "Retag",          sub: "FR-X4 · adjust" },
+        { C: APConvError,      label: "Error · EC5",    sub: "No URL detected" },
+      ],
+    },
+    {
+      num: "03",
+      name: "Browser extension",
+      tag: "Quick capture · §5.5 FR-B1 → B6 · auth + EC4 error",
+      x: 15500,
+      frameW: 1440, frameH: 900, gap: 100,
+      screens: [
+        { C: XTExtAuth,      label: "First run",     sub: "Auth · sign in" },
+        { C: XTExtTrigger,   label: "Triggered",     sub: "FR-B2 · ⌘⇧S on page" },
+        { C: XTExtSuggested, label: "Suggested",     sub: "FR-B3 · tag + note" },
+        { C: XTExtSaved,     label: "Saved",         sub: "FR-B4 · auto-dismiss" },
+        { C: XTExtError,     label: "Error · EC4",   sub: "Page blocks scripts" },
       ],
     },
   ];
@@ -1624,8 +1649,9 @@ function App() {
         <IntroCard x={-100} y={-1400} />
 
         {sections.map((s) => {
+          const step = s.frameW + s.gap;
           const items = s.screens.map((scr, i) => ({
-            x: stepX(i), y: 0, w: FRAME_W, h: FRAME_H,
+            x: i * step, y: 0, w: s.frameW, h: s.frameH,
             C: scr.C, title: `${i + 1} · ${scr.label}`, sub: scr.sub,
           }));
           const maxX = Math.max(...items.map(it => it.x + it.w), 0);
