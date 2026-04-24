@@ -589,6 +589,111 @@
 
   /* Hidden when not active */
   [hidden] { display: none !important; }
+
+  /* ---------- Mobile menu button (hidden on desktop) ---------- */
+  .menu-btn {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(18,13,11,0.14);
+    align-items: center;
+    justify-content: center;
+    color: var(--wf-light-fg);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .menu-btn:hover { background: var(--wf-light-panel); }
+
+  /* ---------- Rail scrim (mobile overlay) ---------- */
+  .rail-scrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(18,13,11,0.28);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 880px) {
+    .app {
+      grid-template-columns: 1fr;
+    }
+
+    /* Rail becomes a left drawer, hidden by default */
+    .rail {
+      position: fixed;
+      top: 0; left: 0;
+      width: 280px;
+      max-width: 82vw;
+      height: 100vh;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+      box-shadow: 8px 0 30px rgba(18,13,11,0.12);
+    }
+    .rail.open { transform: translateX(0); }
+
+    .rail-scrim { display: block; }
+    .rail-scrim.open { opacity: 1; pointer-events: auto; }
+
+    .menu-btn { display: inline-flex; }
+
+    /* Home chip moves top-right so the drawer can slide in from the left */
+    .home-link { left: auto; right: 12px; }
+
+    .topbar {
+      padding: 12px 16px;
+      gap: 10px;
+    }
+    .search {
+      max-width: none;
+      padding: 7px 14px;
+    }
+    .pill-btn { display: none; } /* hide "Hide archetype" toggle on mobile */
+
+    .archetype {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 12px 16px;
+    }
+    .archetype .dismiss { align-self: flex-end; }
+
+    .banner {
+      padding: 16px 16px 4px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .banner h1 { font-size: 20px; }
+    .banner .clear { margin-left: 0; }
+
+    .filters { padding: 4px 16px 12px; }
+
+    .grid { padding: 16px 16px 96px; }
+
+    /* Detail panel becomes a bottom/right full sheet on phones */
+    .detail {
+      width: 100%;
+      max-width: 100%;
+      border-left: 0;
+    }
+    .detail .body { padding: 18px 18px 24px; }
+    .detail .hero { height: 180px; }
+  }
+
+  @media (max-width: 520px) {
+    .grid { column-count: 1; }
+    .banner h1 { font-size: 18px; }
+    .chip { font-size: 11px; padding: 4px 10px; }
+    .detail .hero { height: 160px; }
+  }
 </style>
 </head>
 <body>
@@ -658,13 +763,13 @@ function sourceById(id) { return SOURCES.find(s => s.id === id); }
    Rail
    ============================================================ */
 
-function Rail({ saves, tagFilter, setTagFilter, sourceFilter, setSourceFilter, includePersonal, setIncludePersonal }) {
+function Rail({ saves, tagFilter, setTagFilter, sourceFilter, setSourceFilter, includePersonal, setIncludePersonal, open }) {
   // Counts respect the include-personal toggle.
   const visibleSaves = saves.filter(s => includePersonal ? true : !s.tags.includes("personal"));
   const countFor = (pred) => visibleSaves.filter(pred).length;
 
   return (
-    <aside className="rail">
+    <aside className={"rail" + (open ? " open" : "")}>
       <div>
         <div className="brand">Sunpull</div>
       </div>
@@ -849,16 +954,20 @@ function App() {
   const [includePersonal, setIncludePersonal] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [archetypeVisible, setArchetypeVisible] = useState(true);
+  const [railOpen, setRailOpen] = useState(false);
 
   const selected = selectedId ? saves.find(s => s.id === selectedId) : null;
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape" && selectedId) setSelectedId(null);
+      if (e.key === "Escape") {
+        if (selectedId) setSelectedId(null);
+        else if (railOpen) setRailOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId]);
+  }, [selectedId, railOpen]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -914,10 +1023,25 @@ function App() {
         setSourceFilter={setSourceFilter}
         includePersonal={includePersonal}
         setIncludePersonal={setIncludePersonal}
+        open={railOpen}
+      />
+      <div
+        className={"rail-scrim" + (railOpen ? " open" : "")}
+        onClick={() => setRailOpen(false)}
+        aria-hidden="true"
       />
 
       <div className="main">
         <div className="topbar">
+          <button
+            className="menu-btn"
+            onClick={() => setRailOpen(o => !o)}
+            aria-label={railOpen ? "Close menu" : "Open menu"}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
           <label className="search">
             <SearchIcon size={13} />
             <input
