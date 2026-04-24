@@ -1,0 +1,1707 @@
+<!doctype html>
+<!--
+  =====================================================================
+  NOTE TO AGENTS — READ BEFORE EDITING THIS FILE
+  =====================================================================
+  Same DOM contract as prd-template.html:
+    1. Only add <section class="slide"> blocks inside <main class="deck">.
+    2. Do not hand-edit <nav id="index-nav"> — it is rebuilt from slides.
+    3. Do not write slide numbers into .tag or .page by hand.
+    4. Keep <main class="deck" id="deck">, <nav id="index-nav">, and the
+       .tag / <h1> / .page structure per slide.
+    5. Scoped additions go inside the <section> with a new class — never
+       modify .slide / .deck base CSS.
+  =====================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aither · Sunspell PRD Template</title>
+<link rel="stylesheet" href="./tokens.css">
+<script src="./firebase-config.js"></script>
+<script src="./auth-gate.js"></script>
+<style>
+  html, body {
+    background: var(--canvas-bg);
+    color: var(--canvas-fg);
+    min-height: 100%;
+    margin: 0;
+    font-family: var(--font-ui);
+    letter-spacing: -0.01em;
+  }
+  html { scroll-behavior: smooth; }
+
+  .app { display: block; }
+
+  /* ---------- Left index (fixed; only the nav list scrolls) ---------- */
+  .index {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    border-right: 1px solid var(--canvas-hair);
+    padding: 20px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    background: var(--canvas-bg);
+    z-index: 10;
+  }
+
+  .index .deck-title {
+    font-size: 20px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--canvas-fg);
+    margin: 32px 0 0;
+  }
+  .index .deck-sub {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 6px 0 0;
+  }
+
+  .index h2 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--canvas-hair);
+  }
+
+  .index nav {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .index nav a {
+    display: grid;
+    grid-template-columns: 28px 1fr 12px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--canvas-hair);
+    color: var(--canvas-fg);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+    position: relative;
+  }
+  .index nav a .n {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--canvas-label);
+    padding-top: 2px;
+  }
+  .index nav a:hover { color: var(--canvas-fg); }
+  .index nav a:hover .n { color: var(--canvas-fg); }
+  .index nav a.is-active .n { color: var(--canvas-fg); }
+  .index nav a.is-active { color: var(--canvas-fg); }
+  .index nav a.is-active::before {
+    content: "";
+    position: absolute;
+    margin-left: -20px;
+    margin-top: 14px;
+    width: 2px;
+    height: 14px;
+    background: var(--canvas-fg);
+  }
+  /* Section-divider rows in the index (rendered for slides tagged as section headers). */
+  .index nav a.is-section {
+    border-top: 1px solid var(--canvas-hair);
+    margin-top: 4px;
+    padding-top: 14px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+  .index nav a.is-section .n { color: var(--canvas-label); }
+
+  /* ---------- Deck (right) ---------- */
+  .deck {
+    margin-left: 280px;
+    padding: 48px 64px 96px;
+  }
+
+  .slide {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 48px;
+    aspect-ratio: 16 / 9;
+    background: var(--canvas-panel);
+    border: 1px solid var(--canvas-hair);
+    border-radius: var(--r-2);
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    position: relative;
+    scroll-margin-top: 32px;
+  }
+  .slide .tag {
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .slide h1 {
+    font-size: 44px;
+    font-weight: var(--w-title);
+    letter-spacing: -0.025em;
+    line-height: 1.04;
+    color: var(--canvas-fg);
+    margin: 12px 0 16px;
+    max-width: 22ch;
+  }
+  .slide p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.7);
+    max-width: 66ch;
+    margin: 0;
+  }
+  .slide .page {
+    position: absolute;
+    right: 48px;
+    bottom: 32px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+  }
+
+  /* Status dot (sign-off) */
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    vertical-align: middle;
+    flex: none;
+  }
+  .status-dot.is-open {
+    background: transparent;
+    border: 1px solid var(--canvas-label);
+  }
+  .status-dot.is-signed {
+    background: var(--canvas-fg);
+    border: 1px solid var(--canvas-fg);
+  }
+
+  /* Brief block */
+  .slide .brief {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(234,228,226,0.58);
+    max-width: 70ch;
+    margin: 0 0 16px;
+    padding: 14px 18px;
+    border-left: 2px solid var(--canvas-hair);
+  }
+  .slide .brief strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+  }
+
+  /* Meta row — DRI, read time, prereqs */
+  .slide .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+    margin: 0 0 20px;
+    padding: 12px 0;
+    border-top: 1px solid var(--canvas-hair);
+    border-bottom: 1px solid var(--canvas-hair);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--canvas-label);
+    text-transform: uppercase;
+  }
+  .slide .meta span strong {
+    color: var(--canvas-fg);
+    font-weight: var(--w-ui);
+    margin-left: 6px;
+  }
+
+  /* Body — plain written-out slide content (lists, tables, blanks). */
+  .slide .body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(234,228,226,0.78);
+    max-width: 78ch;
+    margin: 0;
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
+  }
+  .slide .body h3 {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--canvas-label);
+    margin: 18px 0 8px;
+  }
+  .slide .body h3:first-child { margin-top: 0; }
+  .slide .body p { font-size: 14px; max-width: none; color: rgba(234,228,226,0.78); }
+  .slide .body ul, .slide .body ol {
+    padding-left: 20px;
+    margin: 6px 0;
+  }
+  .slide .body li { margin: 3px 0; }
+  .slide .body code, .slide .body pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(234,228,226,0.88);
+    background: rgba(234,228,226,0.04);
+    border-radius: var(--r-1);
+  }
+  .slide .body code { padding: 1px 5px; }
+  .slide .body pre {
+    padding: 12px 14px;
+    margin: 8px 0;
+    white-space: pre;
+    overflow-x: auto;
+    border: 1px solid var(--canvas-hair);
+    background: rgba(0,0,0,0.18);
+  }
+  .slide .body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+  .slide .body th, .slide .body td {
+    border-bottom: 1px solid var(--canvas-hair);
+    padding: 6px 10px 6px 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .slide .body th {
+    color: var(--canvas-label);
+    font-weight: var(--w-ui);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Section-divider slides — larger heading, no brief */
+  .slide.section {
+    aspect-ratio: 16 / 9;
+    padding: 64px 56px;
+  }
+  .slide.section h1 { font-size: 64px; max-width: 16ch; }
+  .slide.section .lede {
+    font-size: 17px;
+    line-height: 1.5;
+    max-width: 60ch;
+    color: rgba(234,228,226,0.7);
+    margin-top: 8px;
+  }
+
+  /* Scrollbars */
+  .index nav::-webkit-scrollbar,
+  .slide .body::-webkit-scrollbar { width: 8px; height: 8px; }
+  .index nav::-webkit-scrollbar-thumb,
+  .slide .body::-webkit-scrollbar-thumb {
+    background: rgba(234,228,226,0.12);
+    border-radius: 4px;
+  }
+  .index nav::-webkit-scrollbar-thumb:hover,
+  .slide .body::-webkit-scrollbar-thumb:hover { background: rgba(234,228,226,0.25); }
+
+  /* Back-home link */
+  .home-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(234,228,226,0.75);
+    background: rgba(18,13,11,0.55);
+    border: 1px solid rgba(234,228,226,0.18);
+    border-radius: var(--r-2);
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .home-link:hover {
+    color: rgba(234,228,226,1);
+    border-color: rgba(234,228,226,0.4);
+  }
+
+  @media (max-width: 720px) {
+    .index {
+      position: static;
+      width: auto;
+      height: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--canvas-hair);
+    }
+    .deck { margin-left: 0; padding: 24px 20px 64px; }
+    .slide { padding: 28px; aspect-ratio: auto; min-height: 80vh; }
+    .slide h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="home-link" href="./index.html" title="Back to home" aria-label="Back to home">&larr; Home</a>
+
+<div class="app">
+
+  <aside class="index">
+    <div>
+      <h1 class="deck-title">Aither MVP Template</h1>
+      <p class="deck-sub">v1 · PRD system</p>
+    </div>
+    <h2>Index</h2>
+    <nav id="index-nav"><!-- auto-populated --></nav>
+  </aside>
+
+  <main class="deck" id="deck">
+
+    <!-- ============================================================
+         INTRO (1–6)
+         ============================================================ -->
+
+    <section class="slide" data-title="Cover" data-status="open">
+      <span class="tag">Cover</span>
+      <h1>Aither MVP PRD Template.</h1>
+      <p class="brief">Canonical template for every Sunspell-released product (SUN or cult). Designed for a 3–4 person team doing independent deep work from signed specs.</p>
+      <div class="meta">
+        <span>Version<strong>v1</strong></span>
+        <span>Owner<strong>Jasmine</strong></span>
+        <span>Review<strong>post-each-MVP retro</strong></span>
+      </div>
+      <div class="body">
+        <p>Seven documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that everyone reads; the rest is build fuel.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Executive overview" data-status="open">
+      <span class="tag">Overview</span>
+      <h1>Executive overview.</h1>
+      <p class="brief">For anyone encountering a Sunspell product spec. Read this once, then read only the Summary at the top of each spec to stay synced.</p>
+      <div class="body">
+        <h3>The problem</h3>
+        <p>A 3–4 person team shipping multiple MVPs (Sunpull, Sunrun, Sundial, Sunspoke — plus cult products) can't afford ambiguous docs. Handoffs, meetings, and re-litigation are all expensive. Every person needs to be able to go deep from the spec without blocking anyone else.</p>
+        <h3>The system</h3>
+        <p>Seven documents per product. One DRI each. Section-by-section signoff with auto-reset on edit. Every spec opens with a one-page Summary that everyone reads; the rest is build fuel.</p>
+        <h3>How you use it</h3>
+        <ol>
+          <li>Read all 6 Summary layers (≈6 min total) to stay synced across the team.</li>
+          <li>Read your DRI spec in full to do your work.</li>
+          <li>Drop a signed spec into Claude. It becomes prompt fuel — Wayeez builds UI from signed Design + Brand specs; Michael builds backend from signed Tech Spec.</li>
+        </ol>
+        <h3>What unlocks what</h3>
+        <p>Master → Product → (Brand + Tech in parallel) → (Design + Website in parallel) → build → launch.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Why this template exists" data-status="open">
+      <span class="tag">Rationale</span>
+      <h1>Why this template exists.</h1>
+      <p class="brief">The contract that lets Jasmine, Wayeez, and Michael each go deep in their own lane without blocking on each other. When a spec is signed, its DRI can disappear for a week and build.</p>
+      <div class="body">
+        <p>It optimizes for three things, in order:</p>
+        <ol>
+          <li><strong>No questions at build time.</strong> Spec is exhaustive where it matters.</li>
+          <li><strong>Deep-work feasibility.</strong> Each spec is self-sufficient once prerequisites are signed.</li>
+          <li><strong>Portfolio efficiency.</strong> Redundant content lives once (Master PRD), not N times.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design principles" data-status="open">
+      <span class="tag">Principles</span>
+      <h1>Template design principles.</h1>
+      <p class="brief">Seven rules that shaped how this template is structured. Every spec, every slide, obeys them.</p>
+      <div class="body">
+        <ol>
+          <li><strong>One DRI per doc.</strong> No co-review ambiguity. Reviewers comment; DRI decides.</li>
+          <li><strong>Three specs per product, not one PRD.</strong> Product Spec parents Design + Tech.</li>
+          <li><strong>Template standardizes the questions, not the answers.</strong> Every SUN is bespoke.</li>
+          <li><strong>Two gears: framing is short, spec is exhaustive.</strong> Don't mix registers.</li>
+          <li><strong>Section-by-section signoff, auto-reset on edit.</strong> Signoff can't silently stale.</li>
+          <li><strong>Deep work possible.</strong> Self-sufficient specs + explicit prerequisites.</li>
+          <li><strong>Traceability over trust.</strong> Every feature threads through Product → Design → Tech → Metrics.</li>
+        </ol>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Portfolio structure" data-status="open">
+      <span class="tag">Context</span>
+      <h1>Portfolio structure.</h1>
+      <p class="brief">How Sunspell's products relate. Every product uses the same 7-spec template. Cult products may mark SUN-specific slides (e.g., Cross-Product Interop) as N/A.</p>
+      <div class="body">
+<pre>Sunspell (venture incubator)
+   │
+   ├── SUN OS (operational, each subscribable, eventually unified OS)
+   │     ├── Sundial   — project manager
+   │     ├── Sunpull   — memory layer
+   │     ├── Sunrun    — task executor
+   │     └── Sunspoke  — communication / leadership
+   │
+   └── Cult products (non-SUN culture-first bets)</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Document architecture" data-status="open">
+      <span class="tag">Architecture</span>
+      <h1>Document architecture.</h1>
+      <p class="brief">Seven specs per product, arranged by dependency. Signing a parent spec unlocks its children. Scope change mid-build → dependent specs pause → propagate up → re-branch.</p>
+      <div class="body">
+<pre>MASTER SUNSPELL PRD      Jasmine · portfolio map       10 slides · 15 min
+   ↓
+PRODUCT SPEC             Jasmine · what &amp; why          16 slides · 20 min
+   ↓
+   ├── BRAND SPEC        Wayeez · identity &amp; voice     14 slides · 20 min
+   │      ↓
+   │      ├── DESIGN SPEC   Wayeez · flows &amp; surfaces   15 slides · 30 min
+   │      └── WEBSITE SPEC  Wayeez · marketing site     13 slides · 20 min
+   ├── TECH SPEC         Michael · architecture         14 slides · 30 min
+   └── ROADMAP SPEC      Jasmine · weekly tasks         8 slides · 10 min
+                         (dynamic — re-versioned weekly)</pre>
+        <h3>Per-slide metadata</h3>
+<pre>[Slide N · &lt;Title&gt;]
+Reviewer: Jasmine | Wayeez | Michael
+Status:   Draft → In Review → Signed
+Last edit: YYYY-MM-DD</pre>
+        <p>Any edit resets status to In Review. Changelog appendix logs who / what / when.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         MASTER SUNSPELL PRD
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Master Sunspell PRD" data-section="true" data-status="open">
+      <span class="tag">Spec 1 of 7</span>
+      <h1>Master Sunspell PRD.</h1>
+      <p class="lede">DRI: Jasmine. 10 slides · 15 min. Locks quarterly. Every product spec references this.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Summary" data-status="open">
+      <span class="tag">Master · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page portfolio summary. Read by the whole team to stay synced. Updated quarterly.</p>
+      <div class="body">
+<pre>MASTER SUNSPELL PRD                                    v__ · &lt;date&gt;
+DRI: Jasmine           Status: Draft | In Review | Signed
+
+Thesis (one line):       ______________________________________________
+Operating principle #1:  ______________________________________________
+Live products:           ______________________________________________
+In-flight products:      ______________________________________________
+This quarter's focus:    ______________________________________________
+Next product to launch:  ______________________________________________
+
+Top 3 portfolio opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Cover" data-status="open">
+      <span class="tag">Master · 1</span>
+      <h1>Cover.</h1>
+      <p class="brief">Sunspell as entity. Version. DRI. Lock date.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Thesis" data-status="open">
+      <span class="tag">Master · 2</span>
+      <h1>Thesis.</h1>
+      <p class="brief">Why the incubator exists. The cross-portfolio bet.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Product Map" data-status="open">
+      <span class="tag">Master · 3</span>
+      <h1>Product map.</h1>
+      <p class="brief">One-liner + short paragraph per product. Status (concept / P0 / P1 / live).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Interaction Diagram" data-status="open">
+      <span class="tag">Master · 4</span>
+      <h1>Interaction diagram.</h1>
+      <p class="brief">Which products talk. Arrows labeled with data type. Disconnected products shown disconnected.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Two-Path North Star" data-status="open">
+      <span class="tag">Master · 5</span>
+      <h1>Two-path north star.</h1>
+      <p class="brief">Each product subscribable AND eventual unified OS. Strategic logic for both paths.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Operating Principles" data-status="open">
+      <span class="tag">Master · 6</span>
+      <h1>Operating principles.</h1>
+      <p class="brief">5–8 non-negotiables that make a product recognizably Sunspell. Inherited by every product.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Shared Services" data-status="open">
+      <span class="tag">Master · 7</span>
+      <h1>Shared services.</h1>
+      <p class="brief">Cross-portfolio inventory: auth, billing, analytics, support, identity. DRI per service.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Data Portability &amp; Privacy" data-status="open">
+      <span class="tag">Master · 8</span>
+      <h1>Data portability &amp; privacy.</h1>
+      <p class="brief">Cross-product rules. Subscribe-to-X-do-I-get-Y-data. Portfolio privacy stance.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Portfolio Roadmap" data-status="open">
+      <span class="tag">Master · 9</span>
+      <h1>Portfolio roadmap.</h1>
+      <p class="brief">Sequencing logic (why Sundial before Sunrun, etc). Graduate / kill criteria per product.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Master · Open Questions" data-status="open">
+      <span class="tag">Master · 10</span>
+      <h1>Open questions.</h1>
+      <p class="brief">Portfolio-level opens.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         PRODUCT SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Product Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 2 of 7</span>
+      <h1>Product Spec.</h1>
+      <p class="lede">DRI: Jasmine. 16 slides · 20 min. Prereq: Master Sunspell PRD signed. Gates unlocked on full signoff: Brand Spec + Tech Spec + Roadmap Spec may begin.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Summary" data-status="open">
+      <span class="tag">Product · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page product summary. Read by the whole team. Updated when any section edits.</p>
+      <div class="body">
+<pre>PRODUCT SPEC · &lt;product name&gt;                          v__ · &lt;date&gt;
+DRI: Jasmine           Status: Draft | In Review | Signed
+
+One-liner:              ______________________________________________
+North Star:             ______________________________________________
+Primary persona:        ______________________________________________
+Mental model:           ______________________________________________
+Current phase:          P0 · P1 · P2+
+Business model:         ______________________________________________
+Launch target (P1):     &lt;date&gt;
+Success metric (P1):    ________________________  @ ______ threshold
+Kill criteria:          if ______________________ then sunset
+
+Top 3 opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Cover" data-status="open">
+      <span class="tag">Product · 1 · Framing</span>
+      <h1>Cover.</h1>
+      <p class="brief">Name, version, DRI, link to Master entry, prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · North Star" data-status="open">
+      <span class="tag">Product · 2 · Framing</span>
+      <h1>North star.</h1>
+      <p class="brief">One sentence. Both paths named (subscribable + unified-OS).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Thesis" data-status="open">
+      <span class="tag">Product · 3 · Framing</span>
+      <h1>Thesis.</h1>
+      <p class="brief">Why this product, why now, why us.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Problem" data-status="open">
+      <span class="tag">Product · 4 · Framing</span>
+      <h1>Problem.</h1>
+      <p class="brief">2–4 pain bullets, no solutioning.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Mental Model" data-status="open">
+      <span class="tag">Product · 5 · Framing</span>
+      <h1>Mental model.</h1>
+      <p class="brief">"X meets Y" anchor.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Personas" data-status="open">
+      <span class="tag">Product · 6 · Framing</span>
+      <h1>Personas.</h1>
+      <p class="brief">1–2 archetypes, bespoke per product.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Principles" data-status="open">
+      <span class="tag">Product · 7 · Framing</span>
+      <h1>Principles.</h1>
+      <p class="brief">5–8, bespoke. Inherits Master Operating Principles; additions only.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Competitive Landscape" data-status="open">
+      <span class="tag">Product · 8 · Strategy</span>
+      <h1>Competitive landscape.</h1>
+      <p class="brief">Who else does this. Where they fail. Where we differentiate.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Positioning" data-status="open">
+      <span class="tag">Product · 9 · Strategy</span>
+      <h1>Positioning.</h1>
+      <p class="brief">Elevator pitch, one paragraph, tight.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Business Model" data-status="open">
+      <span class="tag">Product · 10 · Strategy</span>
+      <h1>Business model.</h1>
+      <p class="brief">Tier structure, trial, bundle vs standalone, billing cadence.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Dependencies" data-status="open">
+      <span class="tag">Product · 11 · Strategy</span>
+      <h1>Dependencies.</h1>
+      <p class="brief">What P1 NEEDS (e.g., Sunrun needs Sunpull + Sundial). Distinct from Interop.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Phases" data-status="open">
+      <span class="tag">Product · 12 · Scope</span>
+      <h1>Phases.</h1>
+      <p class="brief">P0 (internal alpha) / P1 (MVP external) / P2+ (unified OS). 3–5 bullets each.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Go-to-Market" data-status="open">
+      <span class="tag">Product · 13 · Scope</span>
+      <h1>Go-to-market.</h1>
+      <p class="brief">Channel, first 10 users, launch sequence, positioning-in-market.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Success Metrics" data-status="open">
+      <span class="tag">Product · 14 · Scope</span>
+      <h1>Success metrics.</h1>
+      <p class="brief">Canonical phased table. One row per phase: bar / metric / threshold.</p>
+      <div class="body">
+        <table>
+          <tr><th>Phase</th><th>Bar</th><th>Metric</th><th>Threshold</th></tr>
+          <tr><td>P0</td><td>Does the team use it? Does the core loop work?</td><td>e.g., team DAU</td><td>3/4 team · 5d/wk</td></tr>
+          <tr><td>P1</td><td>Do external users activate + retain?</td><td>e.g., W1 retention</td><td>40%</td></tr>
+          <tr><td>P2+</td><td>Does it compound with other SUNs?</td><td>e.g., cross-product actions/user/wk</td><td>TBD</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Kill Criteria" data-status="open">
+      <span class="tag">Product · 15 · Scope</span>
+      <h1>Kill criteria.</h1>
+      <p class="brief">What does failure look like? Explicit thresholds for sunset.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Product · Risks" data-status="open">
+      <span class="tag">Product · 16 · Scope</span>
+      <h1>Risks.</h1>
+      <p class="brief">Cold-start, cost, adoption, competitive, regulatory. Honest.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         BRAND SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Brand Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 3 of 7</span>
+      <h1>Brand Spec.</h1>
+      <p class="lede">DRI: Wayeez. 14 slides · 20 min. Prereq: Product Spec signed. Gates unlocked on full signoff: Design Spec + Website Spec may begin. Identity &gt; style: positioning and voice first, tokens and swatches late.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Summary" data-status="open">
+      <span class="tag">Brand · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page brand summary. Positioning, archetype, tone, NOT list, falsifiable tests.</p>
+      <div class="body">
+<pre>BRAND SPEC · &lt;product name&gt;                            v__ · &lt;date&gt;
+DRI: Wayeez            Status: Draft | In Review | Signed
+
+Positioning line:       ______________________________________________
+Archetype (one quote):  "_____________________________________________"
+Tone (4 adjectives):    ______, ______, ______, never ______
+House phrases (3):
+  • ___________________________________________________________________
+  • ___________________________________________________________________
+  • ___________________________________________________________________
+
+NOT (top 3):
+  × Not ______________________________________________________________
+  × Not ______________________________________________________________
+  × Not ______________________________________________________________
+
+Falsifiable tests:
+  □ Logo-removed recognition
+  □ __________________________________________________________________
+  □ __________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Cover" data-status="open">
+      <span class="tag">Brand · 1 · Identity</span>
+      <h1>Cover.</h1>
+      <p class="brief">Name, version, DRI, link to Product Spec, prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Positioning Line" data-status="open">
+      <span class="tag">Brand · 2 · Identity</span>
+      <h1>Positioning line.</h1>
+      <p class="brief">One sentence. The thing the product <em>is</em>. Passes the <strong>logo-removed test</strong>: if someone saw a touchpoint with no logo, would they still know it's this product?</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Archetype" data-status="open">
+      <span class="tag">Brand · 3 · Identity</span>
+      <h1>Archetype.</h1>
+      <p class="brief">Personality as an <strong>imagined quote</strong>. e.g., "The friend who always remembers what you liked." One sentence compresses personality better than a values list.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · NOT List" data-status="open">
+      <span class="tag">Brand · 4 · Identity</span>
+      <h1>NOT list.</h1>
+      <p class="brief">4–5 negative positioning statements. "Not a tech brand." "Not a luxury brand." Negative positioning is a first-class artifact — defines against, not just for.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Brand Principles" data-status="open">
+      <span class="tag">Brand · 5 · Voice</span>
+      <h1>Brand principles.</h1>
+      <p class="brief">5 numbered. Format: <strong>noun-phrase + foil</strong>. e.g., 01 Human First (Real &gt; polished); 02 Emotion Over Production (Imperfect is better). Principles are paired with the tension they resolve — never abstract virtues alone.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Tone" data-status="open">
+      <span class="tag">Brand · 6 · Voice</span>
+      <h1>Tone.</h1>
+      <p class="brief"><strong>4 adjectives, last one negative.</strong> e.g., "Warm, inclusive, slightly intimate, never try-hard." The negative forces the author to define against something.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · House Phrases" data-status="open">
+      <span class="tag">Brand · 7 · Voice</span>
+      <h1>House phrases.</h1>
+      <p class="brief">3–5 reusable hero taglines. e.g., "This is from all of us." Provide the Claude prompt fuel for consistent copy generation.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Microcopy Patterns" data-status="open">
+      <span class="tag">Brand · 8 · Voice</span>
+      <h1>Microcopy patterns.</h1>
+      <p class="brief"><strong>Before/after table.</strong> Transactional copy → brand-voice copy. e.g., "Record response" → "Say something back". Teaches the translation rule, not just final copy.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Microcopy Classes" data-status="open">
+      <span class="tag">Brand · 9 · System</span>
+      <h1>Microcopy classes.</h1>
+      <p class="brief">Canonical copy per state: empty · loading · error · success · permission-denied · rate-limited. Claude pulls from here for every flow.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Logo &amp; Spatial Logic" data-status="open">
+      <span class="tag">Brand · 10 · System</span>
+      <h1>Logo &amp; spatial logic.</h1>
+      <p class="brief">Usage rules. Forbidden treatments. Absolute don'ts ("Never X"), no "prefer" language.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Color" data-status="open">
+      <span class="tag">Brand · 11 · System</span>
+      <h1>Color.</h1>
+      <p class="brief">Per color: <strong>name / role / one-sentence rationale</strong>. Rationale is the critical column — "Reads 'alive' without 'urgent'" — not just swatches.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Typography" data-status="open">
+      <span class="tag">Brand · 12 · System</span>
+      <h1>Typography.</h1>
+      <p class="brief">Font roles + absolute don'ts. e.g., "Never mix serif and sans at the same size."</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Imagery &amp; Attitude" data-status="open">
+      <span class="tag">Brand · 13 · System</span>
+      <h1>Imagery &amp; attitude.</h1>
+      <p class="brief">Photography / illustration / motion stance. Brand attitude, not implementation detail.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Brand · Falsifiable Tests" data-status="open">
+      <span class="tag">Brand · 14 · Verification</span>
+      <h1>Falsifiable tests.</h1>
+      <p class="brief">3–5 tests that determine if the brand is working. e.g., "Logo-removed recognition." "Single-CTA rule holds." "Never paywall the message." Assertions that could be <em>disproved</em> — makes the Brand Spec usable in review, not aspirational.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         DESIGN SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Design Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 4 of 7</span>
+      <h1>Design Spec.</h1>
+      <p class="lede">DRI: Wayeez. 15 slides · 30 min. Audience: Wayeez + Claude. Prereq: Product Spec + Brand Spec signed. Gates unlocked on full signoff: production UI build can begin.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Summary" data-status="open">
+      <span class="tag">Design · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page design summary. IA, happy path, use cases, surfaces, traceability checklist.</p>
+      <div class="body">
+<pre>DESIGN SPEC · &lt;product name&gt;                           v__ · &lt;date&gt;
+DRI: Wayeez            Status: Draft | In Review | Signed
+
+IA (top-level surfaces):  _______ · _______ · _______ · _______ · _______
+Happy path (one sentence): ________________________________________________
+P0 use cases (3–5):
+  UC-01 ______________________________________________________________
+  UC-02 ______________________________________________________________
+  UC-03 ______________________________________________________________
+
+Key surfaces (3):          _______________________ · _______________________ · _______________________
+P0 feature count:          ___   Flows defined: ___   States covered: ___ / 8
+Traceability checklist:    □ all features → use cases → flows → surfaces → events
+
+Top 3 opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Cover" data-status="open">
+      <span class="tag">Design · 1 · Structure</span>
+      <h1>Cover.</h1>
+      <p class="brief">Name, links to Product + Brand + Tech spec, prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Mental Model Recap" data-status="open">
+      <span class="tag">Design · 2 · Structure</span>
+      <h1>Mental model recap.</h1>
+      <p class="brief">One-slide recap from Product Spec — keeps Wayeez oriented in deep work.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · IA Map" data-status="open">
+      <span class="tag">Design · 3 · Structure</span>
+      <h1>IA map.</h1>
+      <p class="brief">Hierarchy of surfaces · navigation model · where every screen/panel lives. Sitemap-equivalent. The product's structural bones before any flow.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Component Inventory" data-status="open">
+      <span class="tag">Design · 4 · Structure</span>
+      <h1>Component inventory.</h1>
+      <p class="brief">Shared UI primitives: name, purpose, where used. Inherits Brand Spec visual system; adds product-specific components. Prevents reinvention; enables Unified OS migration.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · User Journey" data-status="open">
+      <span class="tag">Design · 5 · Experience</span>
+      <h1>User journey.</h1>
+      <p class="brief">Full lifecycle: Discover → Install → Onboard → First Value → Activate → Habituate → Lapse → Reactivate → Invite. Features/flows fired per stage.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Feature Inventory" data-status="open">
+      <span class="tag">Design · 6 · Experience</span>
+      <h1>Feature inventory.</h1>
+      <p class="brief">Flat table: F-ID · Name · Description · Use Case · Flow · Surface · Phase · Status.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Use Cases" data-status="open">
+      <span class="tag">Design · 7 · Experience</span>
+      <h1>Use cases.</h1>
+      <p class="brief">3–5 for P0, more for P1. Per case: trigger / goal / success criteria. NO screens.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Happy Path" data-status="open">
+      <span class="tag">Design · 8 · Experience</span>
+      <h1>Happy path.</h1>
+      <p class="brief">The single critical end-to-end flow the product MUST deliver. No branches, no errors, no edges — the golden path from first touch to core value delivered. If the happy path breaks, ship nothing.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · User Flows" data-status="open">
+      <span class="tag">Design · 9 · Experience</span>
+      <h1>User flows.</h1>
+      <p class="brief">One per use case. Per flow: entry points · decision branches · exit points · states table (Empty / Loading / Partial / Full / Error / Edge / Offline / Permission-denied) · <strong>Build Notes for Claude</strong> (constraints, reference components, anti-patterns).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Surfaces" data-status="open">
+      <span class="tag">Design · 10 · Experience</span>
+      <h1>Surfaces.</h1>
+      <p class="brief">Primary output + 2–3 key screens. Per surface: interaction matrix (elements × click / hover / drag / keyboard / long-press / system-event), wireframe thumbs.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Onboarding" data-status="open">
+      <span class="tag">Design · 11 · Detail</span>
+      <h1>Onboarding.</h1>
+      <p class="brief">Screen-by-screen. &lt;60s input bar.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Error Taxonomy" data-status="open">
+      <span class="tag">Design · 12 · Detail</span>
+      <h1>Error taxonomy.</h1>
+      <p class="brief">Categorized (user / system / network / permission / rate-limit). Canonical copy per class (inherits Brand Spec microcopy). Claude references for consistent UI.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Accessibility Baseline" data-status="open">
+      <span class="tag">Design · 13 · Detail</span>
+      <h1>Accessibility baseline.</h1>
+      <p class="brief">Keyboard nav, screen reader, contrast, reduced motion. MVP floor — retrofit is brutal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Instrumentation" data-status="open">
+      <span class="tag">Design · 14 · Gate</span>
+      <h1>Instrumentation / event taxonomy.</h1>
+      <p class="brief">Every event fired · owner (Design defines, Tech implements) · which Metric it serves.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Design · Traceability Checklist" data-status="open">
+      <span class="tag">Design · 15 · Gate</span>
+      <h1>Traceability checklist.</h1>
+      <p class="brief">Signoff gate. Every feature → use case → flow → surface → event. Any gap blocks signoff.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         TECH SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Tech Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 5 of 7</span>
+      <h1>Tech Spec.</h1>
+      <p class="lede">DRI: Michael. 14 slides · 30 min. Prereq: Product Spec signed (Design Spec helpful but not blocking). Gates unlocked on full signoff: production backend build can begin.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Summary" data-status="open">
+      <span class="tag">Tech · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page tech summary. Stack, data, auth, interop, cost estimate, lock-in risks.</p>
+      <div class="body">
+<pre>TECH SPEC · &lt;product name&gt;                             v__ · &lt;date&gt;
+DRI: Michael           Status: Draft | In Review | Signed
+
+Architecture (one line):  _______________________________________________
+Stack:                    _______________________________________________
+Data store:               _______________________________________________
+Auth:                     _______________________________________________
+
+Reads from other SUNs:    _______________________________________________
+Writes to other SUNs:     _______________________________________________
+External dependencies:    _______________________________________________
+
+Per-user cost estimate (P1): $_____ /mo
+Unified-OS lock-in risks (top 2):
+  × _________________________________________________________________
+  × _________________________________________________________________
+
+Top 3 tech opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cover" data-status="open">
+      <span class="tag">Tech · 1 · Architecture</span>
+      <h1>Cover.</h1>
+      <p class="brief">Links + prereq check.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Architecture" data-status="open">
+      <span class="tag">Tech · 2 · Architecture</span>
+      <h1>Architecture.</h1>
+      <p class="brief">System diagram · components · boundaries.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Data Model" data-status="open">
+      <span class="tag">Tech · 3 · Architecture</span>
+      <h1>Data model.</h1>
+      <p class="brief">Schemas · relationships · indexes.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Ingestion / Storage" data-status="open">
+      <span class="tag">Tech · 4 · Architecture</span>
+      <h1>Ingestion / storage.</h1>
+      <p class="brief">How data enters, where it sits, retention.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · External Integrations" data-status="open">
+      <span class="tag">Tech · 5 · Integration</span>
+      <h1>External integrations.</h1>
+      <p class="brief">Third-party APIs, data flowing in/out.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Auth / Permissions" data-status="open">
+      <span class="tag">Tech · 6 · Integration</span>
+      <h1>Auth / permissions.</h1>
+      <p class="brief">Identity, access control, session. References Master Shared Services.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cross-Product Interop" data-status="open">
+      <span class="tag">Tech · 7 · Integration</span>
+      <h1>Cross-product interop.</h1>
+      <p class="brief">Reads from / writes to other SUN products. Documented on BOTH sides of the connection.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Phased Tech Approach" data-status="open">
+      <span class="tag">Tech · 8 · Ops</span>
+      <h1>Phased tech approach.</h1>
+      <p class="brief">P0 vs P1 build scope. What ships simplest, what gets added.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Observability" data-status="open">
+      <span class="tag">Tech · 9 · Ops</span>
+      <h1>Observability.</h1>
+      <p class="brief">Logs, metrics, alerts, dashboards. Implements Design Spec instrumentation.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Privacy &amp; Data Handling" data-status="open">
+      <span class="tag">Tech · 10 · Ops</span>
+      <h1>Privacy &amp; data handling.</h1>
+      <p class="brief">PII classification, retention, deletion paths, GDPR/CCPA.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Cost Model" data-status="open">
+      <span class="tag">Tech · 11 · Ops</span>
+      <h1>Cost model.</h1>
+      <p class="brief">Per-user cost at scale (LLM, storage, embeddings). Informs Product Spec pricing.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Migration Path to Unified OS" data-status="open">
+      <span class="tag">Tech · 12 · Future-proofing</span>
+      <h1>Migration path to unified OS.</h1>
+      <p class="brief">Which contracts are "forever" vs "free to break". Lock-in decisions explicit.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Tech Risks" data-status="open">
+      <span class="tag">Tech · 13 · Future-proofing</span>
+      <h1>Tech risks.</h1>
+      <p class="brief">Scaling, dependency fragility, model drift.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Tech · Open Tech Questions" data-status="open">
+      <span class="tag">Tech · 14 · Future-proofing</span>
+      <h1>Open tech questions.</h1>
+      <p class="brief">Unresolved.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         WEBSITE SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Website Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 6 of 7</span>
+      <h1>Website Spec.</h1>
+      <p class="lede">DRI: Wayeez. 13 slides · 20 min. Audience: Wayeez + Claude. Prereq: Product Spec + Brand Spec signed. Re-versioned per launch (P1, P2…). Brand Spec is durable; Website Spec cycles.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Summary" data-status="open">
+      <span class="tag">Website · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page site summary. Goal, conversion, hero, CTA, selected asset tier.</p>
+      <div class="body">
+<pre>WEBSITE SPEC · &lt;product name&gt;                          v__ · &lt;date&gt;
+DRI: Wayeez            Status: Draft | In Review | Signed
+Launch version:        P1 | P2 | ___       Target launch: &lt;date&gt;
+
+URL:                    _______________________________________________
+Goal:                   _______________________________________________
+Success threshold:      _____% conversion on _________________________
+
+Selected hero:          "______________________________________________"
+Selected subhead:       "______________________________________________"
+Primary CTA:            "______________________________________________"
+
+Selected asset tier:    Easy · Medium · Difficult
+Rationale:              _______________________________________________
+Deferred tiers → when:  _______________________________________________
+
+Top 3 opens:
+  1. _________________________________________________________________
+  2. _________________________________________________________________
+  3. _________________________________________________________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Cover" data-status="open">
+      <span class="tag">Website · 1 · Foundation</span>
+      <h1>Cover.</h1>
+      <p class="brief">Product name, URL, version, DRI, prereq check, target launch date.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Goal" data-status="open">
+      <span class="tag">Website · 2 · Foundation</span>
+      <h1>Goal.</h1>
+      <p class="brief">Primary conversion goal (sign-up · waitlist · direct subscribe) + secondary goals. Success threshold per goal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Audience" data-status="open">
+      <span class="tag">Website · 3 · Foundation</span>
+      <h1>Audience.</h1>
+      <p class="brief">Visitor personas — often <em>different</em> from product personas (curious prospect ≠ active user). Traffic sources expected (direct / search / social / referral).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Hero / Tagline" data-status="open">
+      <span class="tag">Website · 4 · Message</span>
+      <h1>Hero / tagline.</h1>
+      <p class="brief"><strong>3–5 candidate taglines + subheads, ranked.</strong> Selected one marked with rationale. Passes Brand Spec logo-removed test.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Message Hierarchy" data-status="open">
+      <span class="tag">Website · 5 · Message</span>
+      <h1>Message hierarchy.</h1>
+      <p class="brief">What a visitor must grok in <strong>10s / 30s / 2min</strong>. Forces the author to decide priority.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · CTAs" data-status="open">
+      <span class="tag">Website · 6 · Message</span>
+      <h1>CTAs.</h1>
+      <p class="brief">Primary + secondary CTAs. Copy variants. Destinations. Hierarchy rule (one primary per page).</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Sitemap" data-status="open">
+      <span class="tag">Website · 7 · Content</span>
+      <h1>Sitemap.</h1>
+      <p class="brief">Page list + purpose per page. Typical: Landing · Pricing · About · FAQ · Changelog · Legal.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Content Blocks" data-status="open">
+      <span class="tag">Website · 8 · Content</span>
+      <h1>Content blocks.</h1>
+      <p class="brief">Per page: section list in order. e.g., Landing = Hero → Problem → How → Features → Social Proof → Pricing → CTA → Footer.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Copy" data-status="open">
+      <span class="tag">Website · 9 · Content</span>
+      <h1>Copy.</h1>
+      <p class="brief">Headlines, subheads, body, CTAs per section. Inherits Brand Spec voice + House Phrases + Microcopy Patterns.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Asset Requirements" data-status="open">
+      <span class="tag">Website · 10 · Asset</span>
+      <h1>Asset requirements — tiered concepts.</h1>
+      <p class="brief"><strong>Three parallel concepts, easy → difficult</strong>, each with scope, mock/reference, estimated time, cost. Visitor-experience differences. Decision row: which concept ships + deferred-to list.</p>
+      <div class="body">
+        <table>
+          <tr><th>Tier</th><th>Concept</th><th>Time</th><th>Cost</th><th>Visitor experience</th></tr>
+          <tr><td>Easy</td><td>Static landing · existing wireframes · stock-ish imagery</td><td>1–2 days</td><td>$</td><td>Clear, competent, generic</td></tr>
+          <tr><td>Medium</td><td>Custom photography · product mockups · subtle motion</td><td>1–2 weeks</td><td>$$</td><td>Distinctive, considered</td></tr>
+          <tr><td>Difficult</td><td>Interactive demo · scroll-driven animation · bespoke 3D</td><td>3–6 weeks</td><td>$$$</td><td>Memorable, shareable</td></tr>
+          <tr><td><strong>Decision</strong></td><td colspan="4">Selected tier + rationale. Deferred-to list for non-selected tiers (e.g., "Medium at launch, Difficult planned for P2").</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Social Proof" data-status="open">
+      <span class="tag">Website · 11 · Asset</span>
+      <h1>Social proof.</h1>
+      <p class="brief">Testimonials · logos · case studies. What we have vs what we need. Placeholder strategy if we ship without.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · SEO / Meta" data-status="open">
+      <span class="tag">Website · 12 · Operations</span>
+      <h1>SEO / meta.</h1>
+      <p class="brief">Title · meta description · OG image · schema markup · target keywords · canonical URLs.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Website · Analytics / Conversion Tracking" data-status="open">
+      <span class="tag">Website · 13 · Operations</span>
+      <h1>Analytics / conversion tracking.</h1>
+      <p class="brief">Events fired · UTM structure · funnel definition · dashboard. References Design Spec Event Taxonomy so product and site share instrumentation.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         ROADMAP SPEC
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Roadmap Spec" data-section="true" data-status="open">
+      <span class="tag">Spec 7 of 7</span>
+      <h1>Roadmap Spec.</h1>
+      <p class="lede">DRI: Jasmine. 8 slides · 10 min. Prereq: Product Spec signed. Dynamic — updated weekly. No one-time "signoff"; per-task decisions (Proposed → Accepted / Declined). Sundial ingests every product's Roadmap Spec and suggests weekly priorities across projects.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Summary" data-status="open">
+      <span class="tag">Roadmap · Summary</span>
+      <h1>Summary (read by everyone).</h1>
+      <p class="brief">The one-page roadmap summary. This week's slate, tasks in flight, capacity, cross-product deps.</p>
+      <div class="body">
+<pre>ROADMAP SPEC · &lt;product name&gt;                          v__ · &lt;week of&gt;
+DRI: Jasmine           Dynamic — updated weekly
+
+Current phase:          P0 · P1 · P2+
+Launch target:          &lt;date&gt;    Weeks remaining: ___
+
+This week's proposed slate (from Sundial):
+  T-__ ___________________________________  [ Accept | Decline | Defer ]
+  T-__ ___________________________________  [ Accept | Decline | Defer ]
+  T-__ ___________________________________  [ Accept | Decline | Defer ]
+
+Tasks in flight:         ___   Tasks blocked: ___   Tasks done this week: ___
+Capacity used / avail:   ___ / ___   Biggest blocker: _____________________
+
+Top 3 cross-product deps:
+  1. Needs ___________ from _________________ by ___________________
+  2. Needs ___________ from _________________ by ___________________
+  3. Needs ___________ from _________________ by ___________________</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Cover" data-status="open">
+      <span class="tag">Roadmap · 1 · Structure</span>
+      <h1>Cover.</h1>
+      <p class="brief">Product name, current week, DRI, phase, launch target.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Task Inventory" data-status="open">
+      <span class="tag">Roadmap · 2 · Structure</span>
+      <h1>Task inventory.</h1>
+      <p class="brief">Canonical table — Sundial's primary input. Every task gets a row. Sundial parses this across all product Roadmaps to generate weekly slates.</p>
+      <div class="body">
+        <table>
+          <tr><th>T-ID</th><th>Title</th><th>Phase</th><th>DRI</th><th>Effort</th><th>Depends on</th><th>Week</th><th>Status</th></tr>
+          <tr><td>T-01</td><td>Build Save ingestion from Chrome ext</td><td>P0</td><td>Wayeez</td><td>M</td><td>—</td><td>W1</td><td>Proposed</td></tr>
+          <tr><td>T-02</td><td>Wire Sunpull API auth</td><td>P0</td><td>Michael</td><td>S</td><td>—</td><td>W1</td><td>Accepted</td></tr>
+          <tr><td>T-03</td><td>Onboarding flow states</td><td>P0</td><td>Wayeez</td><td>M</td><td>T-01</td><td>W2</td><td>Proposed</td></tr>
+          <tr><td>T-04</td><td>Cost guardrails on LLM calls</td><td>P1</td><td>Michael</td><td>L</td><td>T-02</td><td>W3</td><td>Proposed</td></tr>
+        </table>
+        <p><strong>Effort:</strong> S (≤½ day) · M (1–2 days) · L (3–5 days) · XL (split). <strong>Status:</strong> Proposed · Accepted · Declined · In Progress · Blocked · Done · Deferred.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Dependency Graph" data-status="open">
+      <span class="tag">Roadmap · 3 · Planning</span>
+      <h1>Dependency graph.</h1>
+      <p class="brief">Inter-task and cross-product blockers. "T-04 blocks T-11." "Needs X from Sunpull before starting."</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Capacity &amp; Effort Budget" data-status="open">
+      <span class="tag">Roadmap · 4 · Planning</span>
+      <h1>Capacity &amp; effort budget.</h1>
+      <p class="brief">Team capacity per week (person-days). Running totals per person. Used to calibrate Sundial's slate size.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Weekly Recommendations" data-status="open">
+      <span class="tag">Roadmap · 5 · Planning</span>
+      <h1>Weekly recommendations.</h1>
+      <p class="brief">Sundial's current proposal. Each task flagged with rationale ("why this now?") + Accept / Decline / Defer decision. Max 4–6 tasks per person per week.</p>
+      <div class="body">
+<pre>WEEK OF &lt;date&gt; — PROPOSED SLATE
+
+For Wayeez (capacity: 4 days this week):
+  ☐ T-01  Build Save ingestion · M · 2 days
+          Why: P0 critical path. Unblocks T-03.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+
+  ☐ T-03  Onboarding flow states · M · 2 days
+          Why: Depends on T-01. Tight fit this week if T-01 ships.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+
+For Michael (capacity: 3 days this week):
+  ☐ T-02  Wire Sunpull API auth · S · 0.5 days
+          Why: P0, unblocks Michael + Wayeez both.
+          Decision:  [ Accept | Decline | Defer to W__ ]
+  ...</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Decision Log" data-status="open">
+      <span class="tag">Roadmap · 6 · Decision</span>
+      <h1>Decision log.</h1>
+      <p class="brief">History of accepted/declined suggestions. Format: date · task · suggested · decision · rationale · decided by. Learning signal for Sundial over time.</p>
+      <div class="body">
+        <table>
+          <tr><th>Date</th><th>Task</th><th>Suggested</th><th>Decision</th><th>Rationale</th><th>Decided by</th></tr>
+          <tr><td>2026-04-30</td><td>T-04</td><td>W3</td><td>Deferred to W5</td><td>Cost work premature pre-MVP</td><td>Jasmine</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Cross-Product Coordination" data-status="open">
+      <span class="tag">Roadmap · 7 · Decision</span>
+      <h1>Cross-product coordination.</h1>
+      <p class="brief">Anything that requires sync with another product's roadmap. Flagged for Sundial to surface in weekly slate.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Roadmap · Weekly Retro" data-status="open">
+      <span class="tag">Roadmap · 8 · Gate</span>
+      <h1>Weekly retro.</h1>
+      <p class="brief">5 min: what got done · what didn't · why · carry forward. Feeds into next week's slate.</p>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         CROSS-CUTTING MECHANICS
+         ============================================================ -->
+
+    <section class="slide section" data-title="— Cross-cutting mechanics" data-section="true" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Cross-cutting mechanics.</h1>
+      <p class="lede">Rituals, gates, logs, and inheritance rules that apply across every spec.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Signoff ritual" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Signoff ritual.</h1>
+      <p class="brief">Weekly 30-min review. 1–2 slides per session. 3 slides/week/person is realistic. Async default: comments in doc; meeting only if unresolved. Any edit to a Signed slide flips status to In Review.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Handoff gates" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Handoff gates.</h1>
+      <p class="brief">What unlocks what. Sign a parent spec, its children can begin.</p>
+      <div class="body">
+        <table>
+          <tr><th>Gate</th><th>Unlocks</th></tr>
+          <tr><td>Master Sunspell PRD signed</td><td>Any Product Spec may start</td></tr>
+          <tr><td>Product Spec signed</td><td>Brand Spec + Tech Spec + Roadmap Spec may start</td></tr>
+          <tr><td>Brand Spec signed</td><td>Design Spec + Website Spec may start</td></tr>
+          <tr><td>Design Spec signed</td><td>Production UI build may begin</td></tr>
+          <tr><td>Tech Spec signed</td><td>Production backend build may begin</td></tr>
+          <tr><td>Website Spec signed</td><td>Site build may begin</td></tr>
+          <tr><td>Roadmap Spec populated</td><td>Execution begins; Sundial surfaces weekly slates</td></tr>
+          <tr><td>Design + Tech both signed</td><td>P0 build complete target set</td></tr>
+          <tr><td>Website Spec signed + P1 ready</td><td>Launch sequence may begin</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Decision log vs open questions" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Decision log &amp; open questions.</h1>
+      <p class="brief">Open Questions: unresolved — blocks signoff. Decision Log: resolved — records decision + date + rationale + who decided. Prevents re-litigation. Format: YYYY-MM-DD · Decision · Rationale · Decided by. Changelog logs every edit to a Signed slide — audit trail for why signoff reset.</p>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Traceability chain" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Traceability chain.</h1>
+      <p class="brief">How a feature threads across specs. Any broken link = gap. Design Spec #15 (Traceability Checklist) audits before signoff.</p>
+      <div class="body">
+<pre>Product Spec     Phase defines scope
+                   ↓
+Design Spec      Feature Inventory (F-IDs)
+                   ↓               ↓                ↓
+                 Use Case      User Flow        Surface
+                                  ↓
+                             Event (from Instrumentation slide)
+                                  ↓
+Tech Spec        Module implements event
+                   ↓
+Product Spec     Metric in Success Metrics slide ← event feeds this</pre>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Inheritance rules" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>Inheritance rules.</h1>
+      <p class="brief">If it drifts across products → lives once in Master. If it's what makes the product different → bespoke in the product spec.</p>
+      <div class="body">
+        <table>
+          <tr><th>Thing</th><th>Lives in</th><th>Inherited by</th></tr>
+          <tr><td>Operating Principles</td><td>Master</td><td>Every product (adds bespoke if needed)</td></tr>
+          <tr><td>Shared Services (auth, billing…)</td><td>Master</td><td>Tech Spec references, doesn't re-specify</td></tr>
+          <tr><td>Cross-portfolio privacy stance</td><td>Master</td><td>Tech Spec extends for product-specifics</td></tr>
+          <tr><td>Personas</td><td>Product Spec</td><td>Bespoke per product — NOT inherited</td></tr>
+          <tr><td>Principles (product-specific)</td><td>Product Spec</td><td>Bespoke per product</td></tr>
+          <tr><td>Mental Model</td><td>Product Spec</td><td>Design Spec slide 2 recaps</td></tr>
+          <tr><td>Brand / Voice / Mood</td><td>Brand Spec</td><td>Design Spec inherits microcopy + visual system</td></tr>
+          <tr><td>Microcopy classes</td><td>Brand Spec</td><td>Design Spec Error Taxonomy references</td></tr>
+          <tr><td>Event Taxonomy</td><td>Design Spec</td><td>Tech Spec implements</td></tr>
+          <tr><td>Data Model</td><td>Tech Spec</td><td>Owned, not inherited</td></tr>
+        </table>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="Out of scope for this template" data-status="open">
+      <span class="tag">Mechanics</span>
+      <h1>What this template does NOT cover.</h1>
+      <p class="brief">Scope kept honest for a small team shipping MVPs. Re-evaluate each at P2+.</p>
+      <div class="body">
+        <ul>
+          <li><strong>Responsive breakpoints</strong> — add at P1.5 when real product exists</li>
+          <li><strong>Motion / transition spec</strong> — polish layer, post-launch</li>
+          <li><strong>Disaster recovery</strong> — MVP-too-early</li>
+          <li><strong>CI/CD + build/deploy detail</strong> — lives in infra, not spec</li>
+          <li><strong>Financing / runway</strong> — not a product doc's job</li>
+          <li><strong>Detailed copy library</strong> — per-product, lives in content tool, linked from Voice slide</li>
+          <li><strong>API reference docs</strong> — generated from code, not hand-specified</li>
+        </ul>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <!-- ============================================================
+         CLOSE
+         ============================================================ -->
+
+    <section class="slide" data-title="Summary — total surface per product" data-status="open">
+      <span class="tag">Close</span>
+      <h1>Total surface per product.</h1>
+      <p class="brief">80 slides per product sounds heavy — it's not. ~55 of them are single-table, single-diagram, or single-sentence slides reviewed in 2 min. Density is concentrated where it matters for build.</p>
+      <div class="body">
+        <table>
+          <tr><th>Doc</th><th>Slides</th><th>DRI</th><th>Read time</th></tr>
+          <tr><td>Master Sunspell PRD (shared)</td><td>10</td><td>Jasmine</td><td>15 min</td></tr>
+          <tr><td>Product Spec</td><td>16</td><td>Jasmine</td><td>20 min</td></tr>
+          <tr><td>Brand Spec</td><td>14</td><td>Wayeez</td><td>20 min</td></tr>
+          <tr><td>Design Spec</td><td>15</td><td>Wayeez</td><td>30 min</td></tr>
+          <tr><td>Tech Spec</td><td>14</td><td>Michael</td><td>30 min</td></tr>
+          <tr><td>Website Spec (per launch)</td><td>13</td><td>Wayeez</td><td>20 min</td></tr>
+          <tr><td>Roadmap Spec (dynamic weekly)</td><td>8</td><td>Jasmine</td><td>10 min</td></tr>
+          <tr><td><strong>Per-product total</strong></td><td><strong>80</strong></td><td></td><td><strong>130 min</strong></td></tr>
+        </table>
+        <p><strong>Summary-only read load:</strong> 6 min total across all 7 specs, for anyone who just needs to stay synced.<br>
+        <strong>Wayeez load:</strong> 3 of 7 per-product docs (Brand, Design, Website). If team grows, Website Spec is the natural first DRI transfer.<br>
+        <strong>Sundial hook:</strong> Roadmap Spec is the data feed. Sundial aggregates across products → weekly slate → team accepts/declines → tracked in Decision Log.</p>
+      </div>
+      <span class="page"></span>
+    </section>
+
+    <section class="slide" data-title="The template itself" data-status="open">
+      <span class="tag">Close</span>
+      <h1>Living template.</h1>
+      <p class="brief">Update when: a gap causes a "wait, what about X" during build; a slide consistently goes unfilled across products (candidate to cut); the team adds a fourth person (revisit DRI model).</p>
+      <div class="meta">
+        <span>Owner<strong>Jasmine</strong></span>
+        <span>Review cadence<strong>post-each-MVP retro</strong></span>
+        <span>Version<strong>v1</strong></span>
+      </div>
+      <span class="page"></span>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  /*
+    Slides runtime — same contract as prd-template.html. Adds:
+      · data-section="true" renders the index row as a section divider.
+  */
+  (function () {
+    var deck   = document.getElementById('deck');
+    var nav    = document.getElementById('index-nav');
+    var slides = Array.prototype.slice.call(deck.querySelectorAll('.slide'));
+    var total  = slides.length;
+    var pad    = function (n) { return (n < 10 ? '0' : '') + n; };
+
+    var isSigned = function (slide) {
+      return (slide.getAttribute('data-status') || '').toLowerCase() === 'signed';
+    };
+    var isSection = function (slide) {
+      return (slide.getAttribute('data-section') || '').toLowerCase() === 'true';
+    };
+
+    // 1. Assign ids, normalize tag, fill page.
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      if (!slide.id) slide.id = 's' + num;
+
+      var tag = slide.querySelector('.tag');
+      if (tag) {
+        var raw = (tag.textContent || '').trim();
+        var label = raw.replace(/^\s*\d+\s*[·\-–—]\s*/, '');
+        tag.innerHTML = '';
+        if (isSigned(slide)) {
+          var dot = document.createElement('span');
+          dot.className = 'status-dot is-signed';
+          tag.appendChild(dot);
+        }
+        var text = document.createElement('span');
+        text.textContent = pad(num) + ' · ' + label;
+        tag.appendChild(text);
+      }
+
+      var page = slide.querySelector('.page');
+      if (page) page.textContent = pad(num) + ' / ' + pad(total);
+    });
+
+    // 2. Build the index.
+    nav.innerHTML = '';
+    slides.forEach(function (slide, i) {
+      var num = i + 1;
+      var titleAttr = slide.getAttribute('data-title');
+      var h1 = slide.querySelector('h1');
+      var label = (titleAttr && titleAttr.trim())
+        || (h1 ? h1.textContent.trim().replace(/[\.!?]+$/, '') : 'Slide ' + num);
+
+      var a = document.createElement('a');
+      a.href = '#' + slide.id;
+      if (isSection(slide)) a.className = 'is-section';
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = pad(num);
+      var labelEl = document.createElement('span');
+      labelEl.className = 'label';
+      labelEl.textContent = label;
+      a.appendChild(n);
+      a.appendChild(labelEl);
+      if (isSigned(slide)) {
+        var dot = document.createElement('span');
+        dot.className = 'status-dot is-signed';
+        a.appendChild(dot);
+      } else {
+        a.appendChild(document.createElement('span'));
+      }
+      nav.appendChild(a);
+    });
+
+    // 3. Active state on scroll.
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var byId  = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.classList.remove('is-active'); });
+        var a = byId[e.target.id];
+        if (a) a.classList.add('is-active');
+      });
+    }, { root: null, rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+
+    slides.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+
+<script src="./firebase-config.js"></script>
+<script src="./comments.js" defer></script>
+</body>
+</html>
